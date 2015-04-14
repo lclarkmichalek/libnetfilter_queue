@@ -1,5 +1,4 @@
 use nfq::*;
-use handle::*;
 
 #[test]
 fn create_handle() {
