@@ -3,22 +3,74 @@
 use libc::*;
 use std::sync::{StaticMutex, MUTEX_INIT};
 use std::error::Error;
+use std::fmt;
 use std::mem;
 use std::ptr::null;
 
 static NFQ_LOCK: StaticMutex = MUTEX_INIT;
 
-pub struct NFQError(pub String);
+#[derive(Debug)]
+enum ErrorReason {
+    OpenHandle,
+    Bind,
+    Unbind,
+    CreateQueue,
+    SetQueueMode,
+    SetQueueMaxlen,
+    Unknown
+}
 
-impl<E: Error> From<E> for NFQError {
-    fn from(err: E) -> NFQError {
-        NFQError(err.description().to_string())
+pub struct NFQError {
+    reason: ErrorReason,
+    description: String,
+    cause: Option<Error>,
+}
+
+impl fmt::Debug for NFQError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        let msg = format!("{:?}: {:?} (cause: {:?})",
+                          self.reason, self.description, self.cause);
+        formatter.write_str(msg.as_slice())
     }
 }
 
-fn error(msg: &str) -> NFQError {
+impl fmt::Display for NFQError {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        let msg = format!("{:?} ({:?})", self.reason, self.description);
+        formatter.write_str(msg.as_slice())
+    }
+}
+
+impl Error for NFQError {
+    fn description(&self) -> &str {
+        self.description.as_slice()
+    }
+    fn cause(&self) -> Option<&Error> {
+        self.cause.as_ref().map(|c| &**c)
+    }
+}
+
+impl<E: Error> From<E> for NFQError {
+    fn from(err: E) -> NFQError {
+        NFQError {
+            reason: ErrorReason::Unknown,
+            description: err.description().to_string(),
+            cause: Some(err),
+        }
+    }
+}
+
+fn error(reason: ErrorReason, msg: &str, res: Option<c_int>) -> NFQError {
     let errno = unsafe { nfq_errno };
-    NFQError(format!("{} (errno: {})", msg, errno))
+    let desc = match res {
+        Some(r) => format!("{} (errno: {}, res: {})", msg, errno, r),
+        None => format!("{}, (errno: {})", msg, errno)
+    };
+    NFQError {
+        reason: reason,
+        description: desc,
+        cause: None,
+    }
 }
 
 #[link(name="netfilter_queue")]
