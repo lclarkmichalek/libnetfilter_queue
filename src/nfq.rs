@@ -1,13 +1,11 @@
 #![allow(non_camel_case_types)]
 
 use libc::*;
-use std::sync::{StaticMutex, MUTEX_INIT};
 use std::mem;
 use std::ptr::null;
 
 use error::*;
-
-static NFQ_LOCK: StaticMutex = MUTEX_INIT;
+use lock::NFQ_LOCK;
 
 // NFQ Handle
 

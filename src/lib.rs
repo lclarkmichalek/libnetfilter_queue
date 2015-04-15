@@ -4,6 +4,7 @@
 extern crate libc;
 
 mod error;
+mod lock;
 
 pub mod nfq;
 
