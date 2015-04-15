@@ -139,7 +139,7 @@ impl NFQHandle {
 
         let res = unsafe { nfq_unbind_pf(self.ptr, proto as uint16_t) };
         if res < 0 {
-            Err(error(ErrorReason::Bind, "Failed to unbind packet filter", Some(res)))
+            Err(error(ErrorReason::Unbind, "Failed to unbind packet filter", Some(res)))
         } else {
             Ok(())
         }
