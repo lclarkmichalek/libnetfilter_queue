@@ -3,6 +3,8 @@
 
 extern crate libc;
 
+mod error;
+
 pub mod nfq;
 
 #[cfg(test)]
