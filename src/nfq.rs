@@ -278,9 +278,9 @@ impl<A> NFQQueue<A> {
         let range = match mode {
             CopyMode::Packet(r) => r,
             _ => 0
-        } as uint16_t;
+        } as uint16_t as uint32_t;
 
-        let res = unsafe { nfq_set_mode(self.ptr, mode, range) };
+        let res = unsafe { nfq_set_mode(self.ptr, cmode, range) };
         if res != 0 {
             Err(error(ErrorReason::SetQueueMode, "Failed to set queue mode", Some(res)))
         } else {
