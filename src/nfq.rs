@@ -117,7 +117,7 @@ impl NFQHandle {
 
         let ptr = unsafe { nfq_open() };
         if ptr.is_null() {
-            Err(error("Failed to allocate NFQHandle"))
+            Err(error(ErrorReason::OpenHandle, "Failed to allocate NFQHandle", None))
         } else {
             Ok(NFQHandle{ ptr: ptr })
         }
@@ -128,7 +128,7 @@ impl NFQHandle {
 
         let res = unsafe { nfq_bind_pf(self.ptr, proto as uint16_t) };
         if res < 0 {
-            Err(error("Failed to bind packet filter"))
+            Err(error(ErrorReason::Bind, "Failed to bind packet filter", Some(res)))
         } else {
             Ok(())
         }
@@ -139,7 +139,7 @@ impl NFQHandle {
 
         let res = unsafe { nfq_unbind_pf(self.ptr, proto as uint16_t) };
         if res < 0 {
-            Err(error("Failed to unbind packet filter"))
+            Err(error(ErrorReason::Bind, "Failed to unbind packet filter", Some(res)))
         } else {
             Ok(())
         }
