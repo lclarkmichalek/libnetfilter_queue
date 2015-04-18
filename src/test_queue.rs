@@ -31,5 +31,5 @@ fn set_maxlen() {
     let mut h = NFQHandle::new().unwrap();
     h.bind(ProtoFamily::INET).unwrap();
     let mut queue = h.queue(1, CallbackCtx{count: 0}, callback).unwrap();
-    queue.queue_maxlen(1024).unwrap();
+    queue.maxlen(1024).unwrap();
 }

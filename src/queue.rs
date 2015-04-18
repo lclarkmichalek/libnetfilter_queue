@@ -111,7 +111,7 @@ impl<A> NFQQueue<A> {
         }
     }
 
-    pub fn queue_maxlen(&mut self, len: u32) -> Result<(), NFQError> {
+    pub fn maxlen(&mut self, len: u32) -> Result<(), NFQError> {
         let res = unsafe { nfq_set_queue_maxlen(self.ptr, len as uint32_t) };
         if res != 0 {
             Err(error(ErrorReason::SetQueueMaxlen, "Failed to set queue maxlen", Some(res)))
