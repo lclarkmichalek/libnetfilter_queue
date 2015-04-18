@@ -65,9 +65,8 @@ impl NFQHandle {
                     ctx: A,
                     cb: fn(ctx: &mut A,
                            msg: &queue::NFGenMsg,
-                           ad: &queue::NFQData) -> c_int
+                           ad: &queue::NFQData) -> i32
                     ) -> Result<queue::NFQQueue<A>, NFQError> {
         queue::new_queue::<A>(self.ptr, num, ctx, cb)
     }
-
 }

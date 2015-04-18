@@ -28,7 +28,7 @@ pub struct NFQData {
 
 struct CallbackData<A> {
     ctx: *mut A,
-    func: fn(ctx: &mut A, msg: &NFGenMsg, ad: &NFQData) -> c_int
+    func: fn(ctx: &mut A, msg: &NFGenMsg, ad: &NFQData) -> i32
 }
 
 pub struct NFQQueue<A> {
@@ -57,7 +57,7 @@ pub fn new_queue<A>(h: *mut nfq_handle,
                     ctx: A,
                     cb: fn(ctx: &mut A,
                            msg: &NFGenMsg,
-                           ad: &NFQData) -> c_int
+                           ad: &NFQData) -> i32
                     ) -> Result<NFQQueue<A>, NFQError> {
     let _g = NFQ_LOCK.lock().unwrap();
 
