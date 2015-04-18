@@ -2,6 +2,8 @@ use libc::c_int;
 use std::error::Error;
 use std::fmt;
 
+use raw::nfq_errno;
+
 #[derive(Debug)]
 pub enum ErrorReason {
     OpenHandle,
@@ -64,9 +66,4 @@ pub fn error(reason: ErrorReason, msg: &str, res: Option<c_int>) -> NFQError {
         description: desc,
         cause: None,
     }
-}
-
-#[link(name="netfilter_queue")]
-extern {
-    static mut nfq_errno: c_int;
 }
