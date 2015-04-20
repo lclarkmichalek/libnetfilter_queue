@@ -17,9 +17,9 @@ pub struct nfq_data;
 #[repr(C)]
 #[packed]
 pub struct nfqnl_msg_packet_hdr {
-    packet_id: uint32_t,
-    hw_protocol: uint16_t,
-    hook: uint8_t
+    pub packet_id: uint32_t,
+    pub hw_protocol: uint16_t,
+    pub hook: uint8_t
 }
 
 #[link(name="netfilter_queue")]
