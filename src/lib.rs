@@ -2,7 +2,7 @@
 //!
 //! These bindings allow you to have access to the `NFQUEUE`, set in `iptables`,
 //! and write your own userspace programs to process these queues.
-#![deny(missing_docs)]
+//#![deny(missing_docs)]
 
 extern crate libc;
 #[macro_use]
@@ -11,10 +11,13 @@ extern crate lazy_static;
 mod ffi;
 
 mod error;
+mod util;
 mod lock;
 
+pub mod message;
+// pub mod packet;
+pub mod queue;
 pub mod handle;
-//pub mod queue;
 
 #[cfg(test)]
 mod test;
