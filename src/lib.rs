@@ -1,17 +1,14 @@
-#![feature(std_misc)]
-#![feature(core)]
-
 extern crate libc;
+#[macro_use]
+extern crate lazy_static;
 
-mod raw;
+mod ffi;
 
 mod error;
 mod lock;
 
 pub mod handle;
-pub mod queue;
+//pub mod queue;
 
 #[cfg(test)]
-mod test_handle;
-#[cfg(test)]
-mod test_queue;
+mod test;

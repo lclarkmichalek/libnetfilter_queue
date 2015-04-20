@@ -1,3 +1,3 @@
-use std::sync::{StaticMutex, MUTEX_INIT};
+use std::sync::Mutex;
 
-pub static NFQ_LOCK: StaticMutex = MUTEX_INIT;
+lazy_static! { pub static ref NFQ_LOCK: Mutex<()> = Mutex::new(()); }
