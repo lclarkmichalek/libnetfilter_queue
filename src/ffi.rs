@@ -1,5 +1,6 @@
 #![allow(non_camel_case_types)]
 
+use std::num::Int;
 use libc::*;
 
 #[link(name="linux/netfilter")]
@@ -28,6 +29,10 @@ pub struct nfqnl_msg_packet_hdr {
     pub packet_id: uint32_t,
     pub hw_protocol: uint16_t,
     pub hook: uint8_t
+}
+
+impl nfqnl_msg_packet_hdr {
+    pub fn id(&self) -> u32 { Int::from_be(self.packet_id) }
 }
 
 #[link(name="netfilter_queue")]

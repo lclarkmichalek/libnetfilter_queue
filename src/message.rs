@@ -2,28 +2,22 @@
 //!
 //! Analagous to <http://netfilter.org/projects/libnetfilter_queue/doxygen/group__Parsing.html>
 
-use std::num::Int;
 use util::*;
 use ffi::*;
+pub use ffi::nfqnl_msg_packet_hdr as Header;
 
-pub struct Message {
+pub struct Message<'a> {
     pub raw: *mut nfgenmsg,
     pub ptr: *mut nfq_data,
-    pub header: Header
+    pub header: &'a Header
 }
 
-pub struct Header {
-    pub id: u32,
-    pub protocol: u16,
-    pub hook: u8
-}
-
-impl Drop for Message {
+impl<'a> Drop for Message<'a> {
     fn drop(&mut self) {}
 }
 
-impl Message {
-    pub fn new(raw: *mut nfgenmsg, ptr: *mut nfq_data) -> Message {
+impl<'a> Message<'a> {
+    pub fn new(raw: *mut nfgenmsg, ptr: *mut nfq_data) -> Message<'a> {
         let header = unsafe {
             let ptr = nfq_get_msg_packet_hdr(ptr);
             as_ref(&ptr).unwrap()
@@ -31,11 +25,7 @@ impl Message {
         Message {
             raw: raw,
             ptr: ptr,
-            header: Header {
-                id: Int::from_be(header.packet_id),
-                protocol: Int::from_be(header.hw_protocol),
-                hook: Int::from_be(header.hook)
-            }
+            header: header
         }
     }
 }
