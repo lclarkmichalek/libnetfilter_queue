@@ -19,9 +19,14 @@ pub const IPHEADER_SIZE: u16 = 160;
 
 #[allow(dead_code)]
 pub struct IPHeader {
-    r1: u32,
-    r2: u32,
-    r3: u32,
+    version_and_header_raw: u8,
+    dscp_raw: u8,
+    total_length_raw: u16,
+    id_raw: u16,
+    flags_and_offset_raw: u16,
+    ttl_raw: u8,
+    protocol_raw: u8,
+    checksum_raw: u16,
     saddr_raw: u32,
     daddr_raw: u32
 }
@@ -29,25 +34,30 @@ pub struct IPHeader {
 impl IPHeader {
     pub fn new() -> IPHeader {
         IPHeader {
-            r1: 0,
-            r2: 0,
-            r3: 0,
-            r4: 0,
-            r5: 0
+            version_and_header_raw: 0,
+            dscp_raw: 0,
+            total_length_raw: 0,
+            id_raw: 0,
+            flags_and_offset_raw: 0,
+            ttl_raw: 0,
+            protocol_raw: 0,
+            checksum_raw: 0,
+            saddr_raw: 0,
+            daddr_raw: 0,
         }
     }
 
     pub fn saddr(&self) -> Ipv4Addr {
-        u32_to_ipv4(&self.r4)
+        addr_to_ipv4(&self.saddr_raw)
     }
 
     pub fn daddr(&self) -> Ipv4Addr {
-        u32_to_ipv4(&self.r5)
+        addr_to_ipv4(&self.daddr_raw)
     }
 }
 
 #[inline]
-fn u32_to_ipv4(src: &u32) -> Ipv4Addr {
+fn addr_to_ipv4(src: &u32) -> Ipv4Addr {
     let octets: [u8; 4] = unsafe { mem::transmute(*src) };
     Ipv4Addr::new(u8::from_be(octets[0]),
                   u8::from_be(octets[1]),
