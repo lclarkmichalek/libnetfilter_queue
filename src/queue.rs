@@ -39,8 +39,7 @@ extern fn queue_callback<A>(qh: *mut nfq_q_handle,
 
     let queue_ptr: *mut Queue<A> = unsafe { mem::transmute(cdata) };
     let queue: &mut Queue<A> = unsafe { as_mut(&queue_ptr).unwrap() };
-    let message = Message { raw: nfmsg, ptr: nfad };
-    println!("Debug: {}", queue.debug);
+    let message = Message::new(nfmsg, nfad);
 
     (queue.callback)(qh, message, &mut queue.data) as c_int
 }
@@ -60,7 +59,7 @@ pub fn new_queue<A>(handle: *mut nfq_handle,
                  packet_handler: fn(qh: *mut nfq_q_handle,
                                  message: Message,
                                  data: &mut A) -> i32,
-                 data: A) -> Result<Box<Queue<A>>, NFQError> {
+                 mut data: A) -> Result<Box<Queue<A>>, NFQError> {
     let _lock = LOCK.lock().unwrap();
 
     let nfq_ptr: *const nfq_q_handle = null();

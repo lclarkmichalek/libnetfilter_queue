@@ -2,6 +2,8 @@ extern crate libc;
 extern crate libnetfilter_queue as nfq;
 
 use libc::*;
+use std::ptr::null;
+use std::mem;
 use nfq::nfq_q_handle;
 use nfq::handle::{Handle, ProtocolFamily};
 use nfq::queue::{Queue, CopyMode};
@@ -29,15 +31,14 @@ fn main() {
 }
 
 fn packet_handler(qh: *mut nfq_q_handle, mut message: Message, data: &mut Void) -> i32 {
-    println!("Received a packet");
+    let header = &message.header;
+    println!("Packet ID: {}, Protocol: {}, Hook: {}", header.id, header.protocol, header.hook);
 
-    let id = message.header().packet_id.clone();
-    println!("Packet ID: {}", id);
-
-    set_verdict(qh, id, Verdict::Accept, 4096, message.raw as *mut c_uchar).ok().unwrap();
-    println!("Verdict set");
-
-    0
+    let NULL: *const c_uchar = null();
+    match set_verdict(qh, header.id, Verdict::Accept, 0, NULL) {
+        Ok(r) => { println!("Verdict set: {}", r); r },
+        Err(_) => -1
+    }
 }
 
 struct Void;
