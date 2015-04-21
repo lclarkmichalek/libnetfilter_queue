@@ -10,6 +10,7 @@ use std::ptr::null;
 use error::*;
 use util::*;
 use message::Message;
+use message::verdict::Verdict;
 use lock::NFQ_LOCK as LOCK;
 
 use ffi::*;
@@ -26,25 +27,42 @@ pub enum CopyMode {
     Packet(u16)
 }
 
-pub struct Queue<A> {
+pub trait PacketHandler<A> {
+    fn handle(&self, hq: *mut nfq_q_handle, message: &mut Message, data: &mut A) -> i32;
+}
+
+pub trait VerdictHandler<A> {
+    fn decide(&self, message: &mut Message, data: &mut A) -> Verdict;
+}
+
+impl<A, V> PacketHandler<A> for V where V: VerdictHandler<A> {
+    fn handle(&self, hq: *mut nfq_q_handle, message: &mut Message, data: &mut A) -> i32 {
+        let NULL: *const c_uchar = null();
+        let verdict = self.decide(message, data);
+        Verdict::set_verdict(hq, message.header.id(), verdict, 0, NULL);
+        0
+    }
+}
+
+extern fn queue_callback<A, F: PacketHandler<A>>(qh: *mut nfq_q_handle,
+                               nfmsg: *mut nfgenmsg,
+                               nfad: *mut nfq_data,
+                               cdata: *mut c_void) -> c_int {
+
+    let queue_ptr: *mut Queue<A, F> = unsafe { mem::transmute(cdata) };
+    let queue: &mut Queue<A, F> = unsafe { as_mut(&queue_ptr).unwrap() };
+    let mut message = Message::new(nfmsg, nfad);
+
+    queue.callback.handle(qh, &mut message, &mut queue.data) as c_int
+}
+
+pub struct Queue<A, F: PacketHandler<A>> {
     ptr: *mut nfq_q_handle,
-    callback: fn(handle: *mut nfq_q_handle, message: Message, data: &mut A) -> i32,
-    data: A
+    data: A,
+    callback: F
 }
 
-extern fn queue_callback<A>(qh: *mut nfq_q_handle,
-                            nfmsg: *mut nfgenmsg,
-                            nfad: *mut nfq_data,
-                            cdata: *mut c_void) -> c_int {
-
-    let queue_ptr: *mut Queue<A> = unsafe { mem::transmute(cdata) };
-    let queue: &mut Queue<A> = unsafe { as_mut(&queue_ptr).unwrap() };
-    let message = Message::new(nfmsg, nfad);
-
-    (queue.callback)(qh, message, &mut queue.data) as c_int
-}
-
-impl<A> Drop for Queue<A> {
+impl<A, F: PacketHandler<A>> Drop for Queue<A, F> {
     fn drop(&mut self) {
         let ret = unsafe { nfq_destroy_queue(self.ptr) };
         if ret != 0 {
@@ -53,39 +71,36 @@ impl<A> Drop for Queue<A> {
     }
 }
 
-pub fn new_queue<A>(handle: *mut nfq_handle,
-                 queue_number: u16,
-                 // TODO: Add a layer of abstraction (struct Packet) to hide the nfq_q_handle
-                 packet_handler: fn(qh: *mut nfq_q_handle,
-                                 message: Message,
-                                 data: &mut A) -> i32,
-                 mut data: A) -> Result<Box<Queue<A>>, NFQError> {
-    let _lock = LOCK.lock().unwrap();
+impl<A, F: PacketHandler<A>> Queue<A, F> {
+    fn new(handle: *mut nfq_handle,
+           queue_number: u16,
+           mut data: A,
+           packet_handler: F) -> Result<Box<Queue<A, F>>, NFQError> {
+        let _lock = LOCK.lock().unwrap();
 
-    let nfq_ptr: *const nfq_q_handle = null();
-    let mut queue: Box<Queue<A>> = Box::new(Queue {
-        ptr: nfq_ptr as *mut nfq_q_handle, // set after nfq_create_queue
-        data: data,
-        callback: packet_handler,
-    });
-    let queue_ptr: *mut Queue<A> = &mut *queue;
+        let nfq_ptr: *const nfq_q_handle = null();
+        let mut queue: Box<Queue<A, F>> = Box::new(Queue {
+            ptr: nfq_ptr as *mut nfq_q_handle, // set after nfq_create_queue
+            data: data,
+            callback: packet_handler,
+        });
+        let queue_ptr: *mut Queue<A, F> = &mut *queue;
 
-    let ptr = unsafe {
-        nfq_create_queue(handle,
-                         queue_number,
-                         queue_callback::<A>,
-                         mem::transmute(queue_ptr))
-    };
+        let ptr = unsafe {
+            nfq_create_queue(handle,
+                             queue_number,
+                             queue_callback::<A, F>,
+                             mem::transmute(queue_ptr))
+        };
 
-    if ptr.is_null() {
-        Err(error(ErrorReason::CreateQueue, "Failed to create Queue", None))
-    } else {
-        queue.ptr = ptr;
-        Ok(queue)
+        if ptr.is_null() {
+            Err(error(ErrorReason::CreateQueue, "Failed to create Queue", None))
+        } else {
+            queue.ptr = ptr;
+            Ok(queue)
+        }
     }
-}
 
-impl<A> Queue<A> {
     pub fn mode(&mut self, mode: CopyMode) -> Result<(), NFQError> {
         let copy_mode = match mode {
             CopyMode::None => NFQCopyMode::NONE,
@@ -114,3 +129,35 @@ impl<A> Queue<A> {
         }
     }
 }
+
+pub struct QueueBuilder<A> {
+    ptr: *mut nfq_handle,
+    queue_number: uint16_t,
+    data: A
+}
+
+impl<A> QueueBuilder<A> {
+    pub fn new(ptr: *mut nfq_handle, data: A) -> QueueBuilder<A> {
+        QueueBuilder {
+            ptr: ptr,
+            queue_number: 0,
+            data: data
+        }
+    }
+
+    pub fn queue_number(&mut self, queue_number: u16) -> &mut QueueBuilder<A> {
+        self.queue_number = queue_number;
+        self
+    }
+
+    pub fn callback_and_finalize<F: PacketHandler<A>>(mut self, callback: F)
+            -> Result<Box<Queue<A, F>>, NFQError> {
+        Queue::new(self.ptr, self.queue_number, self.data, callback)
+    }
+
+    pub fn decider_and_finalize<F: PacketHandler<A> + VerdictHandler<A>>(mut self, decider: F)
+            -> Result<Box<Queue<A, F>>, NFQError> {
+        Queue::new(self.ptr, self.queue_number, self.data, decider)
+    }
+}
+

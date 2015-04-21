@@ -6,18 +6,19 @@ use std::ptr::null;
 use std::mem;
 use nfq::nfq_q_handle;
 use nfq::handle::{Handle, ProtocolFamily};
-use nfq::queue::{Queue, CopyMode};
+use nfq::queue::{CopyMode, VerdictHandler};
 use nfq::message::Message;
-use nfq::message::verdict::{set_verdict, Verdict};
+use nfq::message::verdict::Verdict;
 
 fn main() {
     let mut void = Void;
     let mut handle = Handle::new().ok().unwrap();
+    let mut queue = handle.queue_builder::<Void>(void)
+        .decider_and_finalize(Decider)
+        .ok().unwrap();
 
     handle.bind(ProtocolFamily::INET);
-    let mut queue = handle.queue::<Void>(0, packet_handler, void).ok().unwrap();
-    queue.mode(CopyMode::Packet(4096)).ok().unwrap();
-    println!("Set copy mode");
+    queue.mode(CopyMode::Packet(4096)).ok();
 
     println!("Listen for packets...");
     handle.start(4096);
@@ -25,15 +26,14 @@ fn main() {
     println!("Finished...");
 }
 
-fn packet_handler(qh: *mut nfq_q_handle, mut message: Message, data: &mut Void) -> i32 {
-    let id = message.header.id();
-    println!("Handline packet (ID: {})", id);
+struct Void;
+struct Decider;
 
-    let NULL: *const c_uchar = null();
-    match set_verdict(qh, id, Verdict::Accept, 0, NULL) {
-        Ok(r) => { println!("Verdict set: {}", r); r },
-        Err(_) => -1
+impl VerdictHandler<Void> for Decider {
+    fn decide(&self, message: &mut Message, data: &mut Void) -> Verdict {
+        let id = message.header.id();
+        println!("Handline packet (ID: {})", id);
+
+        Verdict::Accept
     }
 }
-
-struct Void;

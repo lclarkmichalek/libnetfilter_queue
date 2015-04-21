@@ -7,7 +7,7 @@ use std::mem;
 use std::ptr::null;
 
 use error::*;
-use queue::{Queue, new_queue};
+use queue::QueueBuilder;
 use message::Message;
 use lock::NFQ_LOCK as LOCK;
 
@@ -78,11 +78,8 @@ impl Handle {
         }
     }
 
-    pub fn queue<A>(&mut self,
-                 queue_number: u16,
-                 callback: fn(qh: *mut nfq_q_handle, message: Message, data: &mut A) -> i32,
-                 mut data: A) -> Result<Box<Queue<A>>, NFQError> {
-        new_queue(self.ptr, queue_number, callback, data)
+    pub fn queue_builder<A>(&mut self, mut data: A) -> QueueBuilder<A> {
+        QueueBuilder::new(self.ptr, data)
     }
 
     pub fn start(&mut self, length: u64) {
