@@ -2,7 +2,7 @@ use libc::c_int;
 use std::error::Error;
 use std::fmt;
 
-use raw::nfq_errno;
+use ffi::nfq_errno;
 
 #[derive(Debug)]
 pub enum ErrorReason {
@@ -42,16 +42,6 @@ impl Error for NFQError {
     }
     fn cause(&self) -> Option<&Error> {
         self.cause.as_ref().map(|c| &**c)
-    }
-}
-
-impl<E: Error + 'static> From<E> for NFQError {
-    fn from(err: E) -> NFQError {
-        NFQError {
-            reason: ErrorReason::Unknown,
-            description: err.description().to_string(),
-            cause: Some(Box::new(err)),
-        }
     }
 }
 
