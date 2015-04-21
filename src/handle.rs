@@ -81,7 +81,7 @@ impl Handle {
     pub fn queue<A>(&mut self,
                  queue_number: u16,
                  callback: fn(qh: *mut nfq_q_handle, message: Message, data: &mut A) -> i32,
-                 data: A) -> Result<Queue<A>, NFQError> {
+                 data: A) -> Result<Box<Queue<A>>, NFQError> {
         new_queue(self.ptr, queue_number, callback, data)
     }
 

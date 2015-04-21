@@ -26,14 +26,9 @@ pub enum CopyMode {
     Packet(u16)
 }
 
-struct Callback<A> {
-    data: *mut A,
-    func: fn(handle: *mut nfq_q_handle, message: Message, data: &mut A) -> i32
-}
-
 pub struct Queue<A> {
     ptr: *mut nfq_q_handle,
-    callback: Callback<A>,
+    callback: fn(handle: *mut nfq_q_handle, message: Message, data: &mut A) -> i32,
     data: A
 }
 
@@ -42,11 +37,12 @@ extern fn queue_callback<A>(qh: *mut nfq_q_handle,
                             nfad: *mut nfq_data,
                             cdata: *mut c_void) -> c_int {
 
-    let callback: &Callback<A> = unsafe { mem::transmute(cdata) };
+    let queue_ptr: *mut Queue<A> = unsafe { mem::transmute(cdata) };
+    let queue: &mut Queue<A> = unsafe { as_mut(&queue_ptr).unwrap() };
     let message = Message { raw: nfmsg, ptr: nfad };
-    let mut data = unsafe { as_mut(&callback.data).unwrap() };
+    println!("Debug: {}", queue.debug);
 
-    (callback.func)(qh, message, data) as c_int
+    (queue.callback)(qh, message, &mut queue.data) as c_int
 }
 
 impl<A> Drop for Queue<A> {
@@ -64,30 +60,22 @@ pub fn new_queue<A>(handle: *mut nfq_handle,
                  packet_handler: fn(qh: *mut nfq_q_handle,
                                  message: Message,
                                  data: &mut A) -> i32,
-                 data: A) -> Result<Queue<A>, NFQError> {
+                 data: A) -> Result<Box<Queue<A>>, NFQError> {
     let _lock = LOCK.lock().unwrap();
 
-    let fpointer: *const nfq_q_handle = null();
-    let apointer: *const A = null();
-    // So we initialise the queue obj as empty apart from the ctx
-    // This is so we can take references to the mem inside
-    let mut queue = Queue {
-        ptr: fpointer as *mut nfq_q_handle, // set after nfq_create_queue
+    let nfq_ptr: *const nfq_q_handle = null();
+    let mut queue: Box<Queue<A>> = Box::new(Queue {
+        ptr: nfq_ptr as *mut nfq_q_handle, // set after nfq_create_queue
         data: data,
-        callback: Callback{
-            data: apointer as *mut A, // will be set to referece queue.data
-            func: packet_handler
-        }
-    };
-
-    let callback_data: *mut A = &mut queue.data;
-    queue.callback.data = callback_data;
+        callback: packet_handler,
+    });
+    let queue_ptr: *mut Queue<A> = &mut *queue;
 
     let ptr = unsafe {
         nfq_create_queue(handle,
                          queue_number,
                          queue_callback::<A>,
-                         mem::transmute(&queue.callback))
+                         mem::transmute(queue_ptr))
     };
 
     if ptr.is_null() {
