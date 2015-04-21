@@ -4,11 +4,9 @@
 
 use libc::*;
 use std::mem;
-use std::ptr::null;
 
 use error::*;
 use queue::QueueBuilder;
-use message::Message;
 use lock::NFQ_LOCK as LOCK;
 
 use ffi::*;
@@ -78,7 +76,7 @@ impl Handle {
         }
     }
 
-    pub fn queue_builder<A>(&mut self, mut data: A) -> QueueBuilder<A> {
+    pub fn queue_builder<A>(&mut self, data: A) -> QueueBuilder<A> {
         QueueBuilder::new(self.ptr, data)
     }
 

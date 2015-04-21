@@ -5,6 +5,7 @@
 //#![deny(missing_docs)]
 
 extern crate libc;
+extern crate num;
 #[macro_use]
 extern crate lazy_static;
 
@@ -20,5 +21,3 @@ pub mod handle;
 
 #[cfg(test)]
 mod test;
-
-pub use ffi::nfq_q_handle;

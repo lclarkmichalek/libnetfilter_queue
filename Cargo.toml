@@ -8,6 +8,5 @@ authors = [
 
 [dependencies]
 lazy_static = "0.1.*"
-log = "0.3.1"
-env_logger = "0.3.0"
-libc = "0.1"
+libc = "0.1.*"
+num = "0.1.*"

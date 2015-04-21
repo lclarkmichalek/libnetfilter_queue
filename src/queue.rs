@@ -13,7 +13,8 @@ use message::Message;
 use message::verdict::Verdict;
 use lock::NFQ_LOCK as LOCK;
 
-use ffi::*;
+use ffi::{nfq_handle, nfgenmsg, nfq_data, nfq_destroy_queue, nfq_create_queue, nfq_set_queue_maxlen, nfq_set_mode};
+pub use ffi::nfq_q_handle;
 
 enum NFQCopyMode {
     NONE = 0,
@@ -35,11 +36,12 @@ pub trait VerdictHandler<A> {
     fn decide(&self, message: &mut Message, data: &mut A) -> Verdict;
 }
 
+#[allow(non_snake_case)]
 impl<A, V> PacketHandler<A> for V where V: VerdictHandler<A> {
     fn handle(&self, hq: *mut nfq_q_handle, message: &mut Message, data: &mut A) -> i32 {
         let NULL: *const c_uchar = null();
         let verdict = self.decide(message, data);
-        Verdict::set_verdict(hq, message.header.id(), verdict, 0, NULL);
+        let _ = Verdict::set_verdict(hq, message.header.id(), verdict, 0, NULL);
         0
     }
 }
@@ -74,7 +76,7 @@ impl<A, F: PacketHandler<A>> Drop for Queue<A, F> {
 impl<A, F: PacketHandler<A>> Queue<A, F> {
     fn new(handle: *mut nfq_handle,
            queue_number: u16,
-           mut data: A,
+           data: A,
            packet_handler: F) -> Result<Box<Queue<A, F>>, NFQError> {
         let _lock = LOCK.lock().unwrap();
 
@@ -150,12 +152,12 @@ impl<A> QueueBuilder<A> {
         self
     }
 
-    pub fn callback_and_finalize<F: PacketHandler<A>>(mut self, callback: F)
+    pub fn callback_and_finalize<F: PacketHandler<A>>(self, callback: F)
             -> Result<Box<Queue<A, F>>, NFQError> {
         Queue::new(self.ptr, self.queue_number, self.data, callback)
     }
 
-    pub fn decider_and_finalize<F: PacketHandler<A> + VerdictHandler<A>>(mut self, decider: F)
+    pub fn decider_and_finalize<F: PacketHandler<A> + VerdictHandler<A>>(self, decider: F)
             -> Result<Box<Queue<A, F>>, NFQError> {
         Queue::new(self.ptr, self.queue_number, self.data, decider)
     }
