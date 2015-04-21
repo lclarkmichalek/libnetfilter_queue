@@ -12,7 +12,8 @@ pub enum Reason {
     CreateQueue,
     SetQueueMode,
     SetQueueMaxlen,
-    GetHeader
+    GetHeader,
+    Verdict
 }
 
 pub struct Error {

@@ -1,10 +1,10 @@
 extern crate libc;
 extern crate libnetfilter_queue as nfq;
 
-use nfq::handle::{Handle, ProtocolFamily};
-use nfq::queue::{CopyMode, VerdictHandler};
+use nfq::verdict::{Verdict, VerdictHandler};
 use nfq::message::Message;
-use nfq::message::verdict::Verdict;
+use nfq::queue::CopyMode;
+use nfq::handle::{Handle, ProtocolFamily};
 
 fn main() {
     let void = Void;

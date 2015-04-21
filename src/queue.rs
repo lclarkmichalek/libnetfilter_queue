@@ -9,12 +9,11 @@ use std::ptr::null;
 
 use error::*;
 use util::*;
+use verdict::{PacketHandler, VerdictHandler};
 use message::Message;
-use message::verdict::Verdict;
 use lock::NFQ_LOCK as LOCK;
 
-use ffi::{nfq_handle, nfgenmsg, nfq_data, nfq_destroy_queue, nfq_create_queue, nfq_set_queue_maxlen, nfq_set_mode};
-pub use ffi::nfq_q_handle;
+use ffi::*;
 
 enum NFQCopyMode {
     NONE = 0,
@@ -26,27 +25,6 @@ pub enum CopyMode {
     None,
     Metadata,
     Packet(u16)
-}
-
-pub trait PacketHandler<A> {
-    fn handle(&self, hq: *mut nfq_q_handle, message: &Message, data: &mut A) -> i32;
-}
-
-pub trait VerdictHandler<A> {
-    fn decide(&self, message: &Message, data: &mut A) -> Verdict;
-}
-
-#[allow(non_snake_case)]
-impl<A, V> PacketHandler<A> for V where V: VerdictHandler<A> {
-    fn handle(&self, hq: *mut nfq_q_handle, message: &Message, data: &mut A) -> i32 {
-        let NULL: *const c_uchar = null();
-        let verdict = self.decide(message, data);
-        match message.header {
-            Ok(header) => { let _ = Verdict::set_verdict(hq, header.id(), verdict, 0, NULL); },
-            Err(_) => (),
-        };
-        0
-    }
 }
 
 extern fn queue_callback<A, F: PacketHandler<A>>(qh: *mut nfq_q_handle,

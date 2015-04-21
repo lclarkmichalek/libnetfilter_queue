@@ -15,6 +15,7 @@ mod error;
 mod util;
 mod lock;
 
+pub mod verdict;
 pub mod message;
 pub mod queue;
 pub mod handle;
