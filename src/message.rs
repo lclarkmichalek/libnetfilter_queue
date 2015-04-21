@@ -23,3 +23,33 @@ impl Message {
         }
     }
 }
+
+pub mod verdict {
+    use libc::*;
+    use ffi::*;
+
+    pub enum Verdict {
+        Drop,
+        Accept,
+        Stolen,
+        Queue,
+        Repeat,
+        Stop
+    }
+
+    pub fn set_verdict(qh: *mut nfq_q_handle, packet_id: uint32_t, verdict: Verdict, data_len: uint32_t, buffer: *mut c_uchar) -> Result<(),()> {
+        let c_verdict = match verdict {
+            Verdict::Drop => NF_DROP,
+            Verdict::Accept => NF_ACCEPT,
+            Verdict::Stolen => NF_STOLEN,
+            Verdict::Queue => NF_QUEUE,
+            Verdict::Repeat => NF_REPEAT,
+            Verdict::Stop => NF_STOP
+        };
+
+        match unsafe { nfq_set_verdict(qh, packet_id, c_verdict as uint32_t, data_len, buffer) } {
+            -1 => Err(()),
+            _ => Ok(())
+        }
+    }
+}

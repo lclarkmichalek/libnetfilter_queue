@@ -2,6 +2,14 @@
 
 use libc::*;
 
+#[link(name="linux/netfilter")]
+pub const NF_DROP: c_int = 0;
+pub const NF_ACCEPT: c_int = 1;
+pub const NF_STOLEN: c_int = 2;
+pub const NF_QUEUE: c_int = 3;
+pub const NF_REPEAT: c_int = 4;
+pub const NF_STOP: c_int = 5;
+
 #[repr(C)]
 pub struct nfq_handle;
 

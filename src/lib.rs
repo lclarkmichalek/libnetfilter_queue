@@ -15,7 +15,6 @@ mod util;
 mod lock;
 
 pub mod message;
-// pub mod packet;
 pub mod queue;
 pub mod handle;
 
