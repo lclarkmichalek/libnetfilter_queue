@@ -1,7 +1,10 @@
 [package]
 name = "libnetfilter_queue"
-version = "0.0.1"
-authors = ["Laurie Clark-Michalek <lclarkmichalek@gmail.com>"]
+version = "0.0.2"
+authors = [
+    "Laurie Clark-Michalek <lclarkmichalek@gmail.com>",
+    "Zach Pomerantz <zach@terminal.com>"
+]
 
 [dependencies]
 lazy_static = "0.1.*"
