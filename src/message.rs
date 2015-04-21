@@ -18,7 +18,7 @@ impl Drop for Message {
 impl Message {
     pub fn header(&mut self) -> &Header {
         unsafe {
-            let ptr = nf_get_msg_packet_hdr(self.ptr);
+            let ptr = nfq_get_msg_packet_hdr(self.ptr);
             as_ref(&ptr).unwrap()
         }
     }

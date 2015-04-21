@@ -28,7 +28,7 @@ pub enum CopyMode {
 
 struct Callback<A> {
     data: *mut A,
-    func: fn(handle: *mut nfq_q_handle, message: &Message, data: &mut A) -> i32
+    func: fn(handle: *mut nfq_q_handle, message: Message, data: &mut A) -> i32
 }
 
 pub struct Queue<A> {
@@ -46,7 +46,7 @@ extern fn queue_callback<A>(qh: *mut nfq_q_handle,
     let message = Message { raw: nfmsg, ptr: nfad };
     let mut data = unsafe { as_mut(&callback.data).unwrap() };
 
-    (callback.func)(qh, &message, data) as c_int
+    (callback.func)(qh, message, data) as c_int
 }
 
 impl<A> Drop for Queue<A> {
@@ -62,7 +62,7 @@ pub fn new_queue<A>(handle: *mut nfq_handle,
                  queue_number: u16,
                  // TODO: Add a layer of abstraction (struct Packet) to hide the nfq_q_handle
                  packet_handler: fn(qh: *mut nfq_q_handle,
-                                 message: &Message,
+                                 message: Message,
                                  data: &mut A) -> i32,
                  data: A) -> Result<Queue<A>, NFQError> {
     let _lock = LOCK.lock().unwrap();

@@ -69,5 +69,5 @@ extern {
                            buf: *const c_uchar) -> c_int;
 
     // Parsing the message
-    pub fn nf_get_msg_packet_hdr(nfad: *mut nfq_data) -> *const nfqnl_msg_packet_hdr;
+    pub fn nfq_get_msg_packet_hdr(nfad: *mut nfq_data) -> *const nfqnl_msg_packet_hdr;
 }
