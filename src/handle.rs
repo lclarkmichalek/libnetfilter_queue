@@ -39,24 +39,24 @@ impl Handle {
     /// Open a new handle to NFQueue
     ///
     /// This tells the kernel that userspace queuing will be handled for the selected protocol.
-    pub fn new() -> Result<Handle, NFQError> {
+    pub fn new() -> Result<Handle, Error> {
         let _lock = LOCK.lock().unwrap();
 
         let ptr = unsafe { nfq_open() };
         if ptr.is_null() {
-            Err(error(ErrorReason::OpenHandle, "Failed to allocate NFQ Handle", None))
+            Err(error(Reason::OpenHandle, "Failed to allocate andle", None))
         } else {
             Ok(Handle{ ptr: ptr })
         }
     }
 
     /// Bind the handle to a `Protocol Family`
-    pub fn bind(&mut self, proto: ProtocolFamily) -> Result<(), NFQError> {
+    pub fn bind(&mut self, proto: ProtocolFamily) -> Result<(), Error> {
         let _lock = LOCK.lock().unwrap();
 
         let res = unsafe { nfq_bind_pf(self.ptr, proto as uint16_t) };
         if res < 0 {
-            Err(error(ErrorReason::Bind, "Failed to bind NFQ Handle", Some(res)))
+            Err(error(Reason::Bind, "Failed to bind handle", Some(res)))
         } else {
             Ok(())
         }
@@ -65,12 +65,12 @@ impl Handle {
     /// Unbind the handle from a `Protocol Family`
     ///
     /// This should usually be avoided, as it may attach other programs from the `Protocol Family`.
-    pub fn unbind(&mut self, proto: ProtocolFamily) -> Result<(), NFQError> {
+    pub fn unbind(&mut self, proto: ProtocolFamily) -> Result<(), Error> {
         let _lock = LOCK.lock().unwrap();
 
         let res = unsafe { nfq_unbind_pf(self.ptr, proto as uint16_t) };
         if res < 0 {
-            Err(error(ErrorReason::Unbind, "Failed to unbind NFQ Handle", Some(res)))
+            Err(error(Reason::Unbind, "Failed to unbind handle", Some(res)))
         } else {
             Ok(())
         }

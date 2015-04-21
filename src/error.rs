@@ -1,27 +1,27 @@
 use libc::c_int;
-use std::error::Error;
+use std::error::Error as Base;
 use std::fmt;
 
 use ffi::nfq_errno;
 
 #[derive(Debug)]
-pub enum ErrorReason {
+pub enum Reason {
     OpenHandle,
     Bind,
     Unbind,
     CreateQueue,
     SetQueueMode,
     SetQueueMaxlen,
-    Unknown
+    GetHeader
 }
 
-pub struct NFQError {
-    reason: ErrorReason,
+pub struct Error {
+    reason: Reason,
     description: String,
-    cause: Option<Box<Error>>,
+    cause: Option<Box<Base>>,
 }
 
-impl fmt::Debug for NFQError {
+impl fmt::Debug for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         let msg = format!("{:?}: {:?} (cause: {:?})",
                           self.reason, self.description, self.cause);
@@ -29,29 +29,29 @@ impl fmt::Debug for NFQError {
     }
 }
 
-impl fmt::Display for NFQError {
+impl fmt::Display for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         let msg = format!("{:?} ({:?})", self.reason, self.description);
         formatter.write_str(msg.as_ref())
     }
 }
 
-impl Error for NFQError {
+impl Base for Error {
     fn description(&self) -> &str {
         self.description.as_ref()
     }
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&Base> {
         self.cause.as_ref().map(|c| &**c)
     }
 }
 
-pub fn error(reason: ErrorReason, msg: &str, res: Option<c_int>) -> NFQError {
+pub fn error(reason: Reason, msg: &str, res: Option<c_int>) -> Error {
     let errno = nfq_errno;
     let desc = match res {
         Some(r) => format!("{} (errno: {}, res: {})", msg, errno, r),
         None => format!("{}, (errno: {})", msg, errno)
     };
-    NFQError {
+    Error {
         reason: reason,
         description: desc,
         cause: None,

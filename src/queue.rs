@@ -41,7 +41,10 @@ impl<A, V> PacketHandler<A> for V where V: VerdictHandler<A> {
     fn handle(&self, hq: *mut nfq_q_handle, message: &Message, data: &mut A) -> i32 {
         let NULL: *const c_uchar = null();
         let verdict = self.decide(message, data);
-        let _ = Verdict::set_verdict(hq, message.header.id(), verdict, 0, NULL);
+        match message.header {
+            Ok(header) => { let _ = Verdict::set_verdict(hq, header.id(), verdict, 0, NULL); },
+            Err(_) => (),
+        };
         0
     }
 }
@@ -77,7 +80,7 @@ impl<A, F: PacketHandler<A>> Queue<A, F> {
     fn new(handle: *mut nfq_handle,
            queue_number: u16,
            data: A,
-           packet_handler: F) -> Result<Box<Queue<A, F>>, NFQError> {
+           packet_handler: F) -> Result<Box<Queue<A, F>>, Error> {
         let _lock = LOCK.lock().unwrap();
 
         let nfq_ptr: *const nfq_q_handle = null();
@@ -96,14 +99,14 @@ impl<A, F: PacketHandler<A>> Queue<A, F> {
         };
 
         if ptr.is_null() {
-            Err(error(ErrorReason::CreateQueue, "Failed to create Queue", None))
+            Err(error(Reason::CreateQueue, "Failed to create queue", None))
         } else {
             queue.ptr = ptr;
             Ok(queue)
         }
     }
 
-    pub fn mode(&mut self, mode: CopyMode) -> Result<(), NFQError> {
+    pub fn mode(&mut self, mode: CopyMode) -> Result<(), Error> {
         let copy_mode = match mode {
             CopyMode::None => NFQCopyMode::NONE,
             CopyMode::Metadata => NFQCopyMode::META,
@@ -116,16 +119,16 @@ impl<A, F: PacketHandler<A>> Queue<A, F> {
 
         let res = unsafe { nfq_set_mode(self.ptr, copy_mode, range) };
         if res != 0 {
-            Err(error(ErrorReason::SetQueueMode, "Failed to set queue mode", Some(res)))
+            Err(error(Reason::SetQueueMode, "Failed to set queue mode", Some(res)))
         } else {
             Ok(())
         }
     }
 
-    pub fn maxlen(&mut self, len: u32) -> Result<(), NFQError> {
+    pub fn maxlen(&mut self, len: u32) -> Result<(), Error> {
         let res = unsafe { nfq_set_queue_maxlen(self.ptr, len) };
         if res != 0 {
-            Err(error(ErrorReason::SetQueueMaxlen, "Failed to set queue maxlen", Some(res)))
+            Err(error(Reason::SetQueueMaxlen, "Failed to set queue maxlen", Some(res)))
         } else {
             Ok(())
         }
@@ -153,12 +156,12 @@ impl<A> QueueBuilder<A> {
     }
 
     pub fn callback_and_finalize<F: PacketHandler<A>>(self, callback: F)
-            -> Result<Box<Queue<A, F>>, NFQError> {
+            -> Result<Box<Queue<A, F>>, Error> {
         Queue::new(self.ptr, self.queue_number, self.data, callback)
     }
 
     pub fn decider_and_finalize<F: PacketHandler<A> + VerdictHandler<A>>(self, decider: F)
-            -> Result<Box<Queue<A, F>>, NFQError> {
+            -> Result<Box<Queue<A, F>>, Error> {
         Queue::new(self.ptr, self.queue_number, self.data, decider)
     }
 }

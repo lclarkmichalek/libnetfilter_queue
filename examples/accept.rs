@@ -27,8 +27,10 @@ struct Decider;
 
 impl VerdictHandler<Void> for Decider {
     fn decide(&self, message: &Message, _: &mut Void) -> Verdict {
-        let id = message.header.id();
-        println!("Handline packet (ID: {})", id);
+        match message.header {
+            Ok(header) => println!("Handling packet (ID: {})", header.id()),
+            Err(_) => ()
+        };
 
         Verdict::Accept
     }
