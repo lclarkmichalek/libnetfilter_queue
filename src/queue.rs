@@ -29,16 +29,16 @@ pub enum CopyMode {
 }
 
 pub trait PacketHandler<A> {
-    fn handle(&self, hq: *mut nfq_q_handle, message: &mut Message, data: &mut A) -> i32;
+    fn handle(&self, hq: *mut nfq_q_handle, message: &Message, data: &mut A) -> i32;
 }
 
 pub trait VerdictHandler<A> {
-    fn decide(&self, message: &mut Message, data: &mut A) -> Verdict;
+    fn decide(&self, message: &Message, data: &mut A) -> Verdict;
 }
 
 #[allow(non_snake_case)]
 impl<A, V> PacketHandler<A> for V where V: VerdictHandler<A> {
-    fn handle(&self, hq: *mut nfq_q_handle, message: &mut Message, data: &mut A) -> i32 {
+    fn handle(&self, hq: *mut nfq_q_handle, message: &Message, data: &mut A) -> i32 {
         let NULL: *const c_uchar = null();
         let verdict = self.decide(message, data);
         let _ = Verdict::set_verdict(hq, message.header.id(), verdict, 0, NULL);
@@ -53,9 +53,9 @@ extern fn queue_callback<A, F: PacketHandler<A>>(qh: *mut nfq_q_handle,
 
     let queue_ptr: *mut Queue<A, F> = unsafe { mem::transmute(cdata) };
     let queue: &mut Queue<A, F> = unsafe { as_mut(&queue_ptr).unwrap() };
-    let mut message = Message::new(nfmsg, nfad);
+    let message = Message::new(nfmsg, nfad);
 
-    queue.callback.handle(qh, &mut message, &mut queue.data) as c_int
+    queue.callback.handle(qh, &message, &mut queue.data) as c_int
 }
 
 pub struct Queue<A, F: PacketHandler<A>> {

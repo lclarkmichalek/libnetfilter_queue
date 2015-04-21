@@ -26,7 +26,7 @@ struct Void;
 struct Decider;
 
 impl VerdictHandler<Void> for Decider {
-    fn decide(&self, message: &mut Message, _: &mut Void) -> Verdict {
+    fn decide(&self, message: &Message, _: &mut Void) -> Verdict {
         let id = message.header.id();
         println!("Handline packet (ID: {})", id);
 
