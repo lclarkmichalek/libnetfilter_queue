@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types)]
 
-use num::traits::PrimInt;
 use libc::*;
+use num::traits::PrimInt;
 
 #[link(name="linux/netfilter")]
 pub const NF_DROP: c_int = 0;
@@ -75,4 +75,5 @@ extern {
 
     // Parsing the message
     pub fn nfq_get_msg_packet_hdr(nfad: *mut nfq_data) -> *const nfqnl_msg_packet_hdr;
+    pub fn nfq_get_payload  (nfad: *mut nfq_data, data: *mut *mut c_uchar) -> c_int;
 }

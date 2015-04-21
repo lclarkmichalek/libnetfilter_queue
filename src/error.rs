@@ -13,6 +13,7 @@ pub enum Reason {
     SetQueueMode,
     SetQueueMaxlen,
     GetHeader,
+    GetPayload,
     Verdict
 }
 

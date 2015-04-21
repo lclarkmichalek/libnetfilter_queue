@@ -2,10 +2,60 @@
 //!
 //! Analagous to <http://netfilter.org/projects/libnetfilter_queue/doxygen/group__Parsing.html>
 
+use libc::*;
+use std::mem;
+use std::ptr::null;
+use std::net::Ipv4Addr;
+use num::traits::PrimInt;
+
 use error::*;
 use util::*;
 use ffi::*;
 pub use ffi::nfqnl_msg_packet_hdr as Header;
+
+pub trait Payload {}
+
+pub const IPHEADER_SIZE: u16 = 160;
+
+#[allow(dead_code)]
+pub struct IPHeader {
+    r1: u32,
+    r2: u32,
+    r3: u32,
+    saddr_raw: u32,
+    daddr_raw: u32
+}
+
+impl IPHeader {
+    pub fn new() -> IPHeader {
+        IPHeader {
+            r1: 0,
+            r2: 0,
+            r3: 0,
+            r4: 0,
+            r5: 0
+        }
+    }
+
+    pub fn saddr(&self) -> Ipv4Addr {
+        u32_to_ipv4(&self.r4)
+    }
+
+    pub fn daddr(&self) -> Ipv4Addr {
+        u32_to_ipv4(&self.r5)
+    }
+}
+
+#[inline]
+fn u32_to_ipv4(src: &u32) -> Ipv4Addr {
+    let octets: [u8; 4] = unsafe { mem::transmute(*src) };
+    Ipv4Addr::new(u8::from_be(octets[0]),
+                  u8::from_be(octets[1]),
+                  u8::from_be(octets[2]),
+                  u8::from_be(octets[3]))
+}
+
+impl Payload for IPHeader {}
 
 pub struct Message<'a> {
     pub raw: *mut nfgenmsg,
@@ -31,6 +81,23 @@ impl<'a> Message<'a> {
             raw: raw,
             ptr: ptr,
             header: header
+        }
+    }
+
+    pub unsafe fn ip_header(&self) -> Result<&IPHeader, Error> {
+        self.payload::<IPHeader>()
+    }
+
+    pub unsafe fn payload<A: Payload>(&self) -> Result<&A, Error> {
+        let data: *const A = null();
+        let ptr: *mut *mut A = &mut (data as *mut A);
+        let _ = match nfq_get_payload(self.ptr, ptr as *mut *mut c_uchar) {
+            -1 => return Err(error(Reason::GetPayload, "Failed to get payload", Some(-1))),
+            _ => ()
+        };
+        match as_ref(&data) {
+            Some(payload) => Ok(payload),
+            None => Err(error(Reason::GetPayload, "Failed to get payload", None))
         }
     }
 }
