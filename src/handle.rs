@@ -1,4 +1,4 @@
-//! The handle into NFQueue, necessary for library setup.
+//! The handle into NFQueue for library setup.
 //!
 //! Analagous to <http://netfilter.org/projects/libnetfilter_queue/doxygen/group__LibrarySetup.html>
 
@@ -17,14 +17,14 @@ use ffi::*;
 pub enum ProtocolFamily {
     /// IPv4 Address Family
     INET = AF_INET as isize,
-    /// IPv4 Address Family
+    /// IPv6 Address Family
     INET6 = AF_INET6 as isize
 }
 
 /// A handle into NFQueue
 ///
 /// This is needed for library setup.
-pub struct Handle { pub ptr: *mut nfq_handle }
+pub struct Handle { ptr: *mut nfq_handle }
 
 impl Drop for Handle {
     fn drop(&mut self) {
@@ -50,7 +50,7 @@ impl Handle {
         }
     }
 
-    /// Bind the handle to a `Protocol Family`
+    /// Bind the handle to a `ProtocolFamily`
     pub fn bind(&mut self, proto: ProtocolFamily) -> Result<(), Error> {
         let _lock = LOCK.lock().unwrap();
 
@@ -62,9 +62,9 @@ impl Handle {
         }
     }
 
-    /// Unbind the handle from a `Protocol Family`
+    /// Unbind the handle from a `ProtocolFamily`
     ///
-    /// This should usually be avoided, as it may attach other programs from the `Protocol Family`.
+    /// This should usually be avoided, as it may attach other programs from the `ProtocolFamily`.
     pub fn unbind(&mut self, proto: ProtocolFamily) -> Result<(), Error> {
         let _lock = LOCK.lock().unwrap();
 
@@ -76,11 +76,25 @@ impl Handle {
         }
     }
 
+    /// Begin to build a new Queue
+    ///
+    /// `data` will be available to the queue's callback as it processes each message.
+    ///
+    /// Example:
+    /// ```ignore
+    /// struct Void; // pass no data to the callback
+    /// let queue_builder = handle.queue_builder(Void);
+    /// ```
     pub fn queue_builder<A>(&mut self, data: A) -> QueueBuilder<A> {
         QueueBuilder::new(self.ptr, data)
     }
 
-    pub fn start(&mut self, length: u64) {
+    /// Start listening using any attached queues
+    ///
+    /// This will only listen on queues attached with `queue_builder`.
+    /// `length` determines the amount of a packet to grab from the queue at a time.
+    /// If you are using `queue::Queue::CopyMode(SIZE)` it must match `SIZE`.
+    pub fn start(&mut self, length: u16) {
         unsafe {
             let buffer: *mut c_void = malloc(mem::size_of::<c_char>() as u64 * length as u64);
             if buffer.is_null() {
@@ -89,7 +103,7 @@ impl Handle {
             let fd = nfq_fd(self.ptr);
 
             loop {
-                match recv(fd, buffer, length, 0) {
+                match recv(fd, buffer, length as u64, 0) {
                     rv if rv >=0 => { nfq_handle_packet(self.ptr, buffer as *mut c_char, rv as i32); },
                     _ => { break; }
                 }

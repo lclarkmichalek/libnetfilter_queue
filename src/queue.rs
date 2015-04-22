@@ -21,9 +21,13 @@ enum NFQCopyMode {
     PACKET = 2
 }
 
+/// The amount of data to be copied to userspace for each packet queued.
 pub enum CopyMode {
+    /// None
     None,
+    /// Packet metadata only
     Metadata,
+    /// If you copy the packet, you must also specify the size of the packet to copy
     Packet(u16)
 }
 
@@ -39,6 +43,9 @@ extern fn queue_callback<A, F: PacketHandler<A>>(qh: *mut nfq_q_handle,
     queue.callback.handle(qh, &message, &mut queue.data) as c_int
 }
 
+/// A handle to an NFQueue queue
+///
+/// This is used to set queue-specific settings, such as copy-mode and max-length.
 pub struct Queue<A, F: PacketHandler<A>> {
     ptr: *mut nfq_q_handle,
     data: A,
@@ -84,6 +91,7 @@ impl<A, F: PacketHandler<A>> Queue<A, F> {
         }
     }
 
+    /// Set the copy-mode for this queue
     pub fn mode(&mut self, mode: CopyMode) -> Result<(), Error> {
         let copy_mode = match mode {
             CopyMode::None => NFQCopyMode::NONE,
@@ -103,8 +111,11 @@ impl<A, F: PacketHandler<A>> Queue<A, F> {
         }
     }
 
-    pub fn maxlen(&mut self, len: u32) -> Result<(), Error> {
-        let res = unsafe { nfq_set_queue_maxlen(self.ptr, len) };
+    /// Set the max-length for this queue
+    ///
+    /// Once `length` packets are enqueued, packets will be dropped until enqueued packets are processed.
+    pub fn maxlen(&mut self, length: u32) -> Result<(), Error> {
+        let res = unsafe { nfq_set_queue_maxlen(self.ptr, length) };
         if res != 0 {
             Err(error(Reason::SetQueueMaxlen, "Failed to set queue maxlen", Some(res)))
         } else {
@@ -113,6 +124,7 @@ impl<A, F: PacketHandler<A>> Queue<A, F> {
     }
 }
 
+/// A builder for `Queue`
 pub struct QueueBuilder<A> {
     ptr: *mut nfq_handle,
     queue_number: uint16_t,
@@ -120,6 +132,7 @@ pub struct QueueBuilder<A> {
 }
 
 impl<A> QueueBuilder<A> {
+    #[doc(hide)]
     pub fn new(ptr: *mut nfq_handle, data: A) -> QueueBuilder<A> {
         QueueBuilder {
             ptr: ptr,
@@ -128,16 +141,22 @@ impl<A> QueueBuilder<A> {
         }
     }
 
+    /// Set the queue from which the `Queue` will take packets
     pub fn queue_number(&mut self, queue_number: u16) -> &mut QueueBuilder<A> {
         self.queue_number = queue_number;
         self
     }
 
+    /// Create the `Queue` with the provided callback
     pub fn callback_and_finalize<F: PacketHandler<A>>(self, callback: F)
             -> Result<Box<Queue<A, F>>, Error> {
         Queue::new(self.ptr, self.queue_number, self.data, callback)
     }
 
+    /// Create the `Queue` with the provided decider
+    ///
+    /// A decider is similar to a callback, except that the verdict must be set at the end of the fn.
+    /// It is an abstraction suitable for most use cases.
     pub fn decider_and_finalize<F: PacketHandler<A> + VerdictHandler<A>>(self, decider: F)
             -> Result<Box<Queue<A, F>>, Error> {
         Queue::new(self.ptr, self.queue_number, self.data, decider)
