@@ -62,33 +62,41 @@ impl<A, F: PacketHandler<A>> Drop for Queue<A, F> {
 }
 
 impl<A, F: PacketHandler<A>> Queue<A, F> {
-    fn new(handle: *mut nfq_handle,
-           queue_number: u16,
-           data: A,
-           packet_handler: F) -> Result<Box<Queue<A, F>>, Error> {
+    fn new(builder: QueueBuilder<A>, packet_handler: F) -> Result<Box<Queue<A, F>>, Error> {
         let _lock = LOCK.lock().unwrap();
 
         let nfq_ptr: *const nfq_q_handle = null();
         let mut queue: Box<Queue<A, F>> = Box::new(Queue {
             ptr: nfq_ptr as *mut nfq_q_handle, // set after nfq_create_queue
-            data: data,
+            data: builder.data,
             callback: packet_handler,
         });
         let queue_ptr: *mut Queue<A, F> = &mut *queue;
 
         let ptr = unsafe {
-            nfq_create_queue(handle,
-                             queue_number,
+            nfq_create_queue(builder.ptr,
+                             builder.queue_number,
                              queue_callback::<A, F>,
                              mem::transmute(queue_ptr))
         };
 
         if ptr.is_null() {
-            Err(error(Reason::CreateQueue, "Failed to create queue", None))
+            return Err(error(Reason::CreateQueue, "Failed to create queue", None));
         } else {
             queue.ptr = ptr;
-            Ok(queue)
         }
+
+        match builder.copy_mode {
+            Some(cm) => try!(queue.set_mode(cm)),
+            None => ()
+        }
+
+        match builder.max_length {
+            Some(ml) => try!(queue.set_max_length(ml)),
+            None => ()
+        }
+
+        Ok(queue)
     }
 
     /// Set the copy-mode for this queue
@@ -128,6 +136,8 @@ impl<A, F: PacketHandler<A>> Queue<A, F> {
 pub struct QueueBuilder<A> {
     ptr: *mut nfq_handle,
     queue_number: uint16_t,
+    copy_mode: Option<CopyMode>,
+    max_length: Option<u32>,
     data: A
 }
 
@@ -137,6 +147,8 @@ impl<A> QueueBuilder<A> {
         QueueBuilder {
             ptr: ptr,
             queue_number: 0,
+            copy_mode: None,
+            max_length: None,
             data: data
         }
     }
@@ -146,6 +158,34 @@ impl<A> QueueBuilder<A> {
         QueueBuilder {
             ptr: self.ptr,
             queue_number: queue_number,
+            copy_mode: self.copy_mode,
+            max_length: self.max_length,
+            data: self.data
+        }
+    }
+
+    /// Set the copy-mode for the `Queue`
+    ///
+    /// Note that this can be changed later through the `Queue`'s methods
+    pub fn copy_mode(self, copy_mode: CopyMode) -> QueueBuilder<A> {
+        QueueBuilder {
+            ptr: self.ptr,
+            queue_number: self.queue_number,
+            copy_mode: Some(copy_mode),
+            max_length: self.max_length,
+            data: self.data
+        }
+    }
+
+    /// Set the max-length for the `Queue`
+    ///
+    /// Note that this can be changed later through the `Queue`'s methods
+    pub fn max_length(self, max_length: u32) -> QueueBuilder<A> {
+        QueueBuilder {
+            ptr: self.ptr,
+            queue_number: self.queue_number,
+            copy_mode: self.copy_mode,
+            max_length: Some(max_length),
             data: self.data
         }
     }
@@ -153,7 +193,7 @@ impl<A> QueueBuilder<A> {
     /// Create the `Queue` with the provided callback
     pub fn callback_and_finalize<F: PacketHandler<A>>(self, callback: F)
             -> Result<Box<Queue<A, F>>, Error> {
-        Queue::new(self.ptr, self.queue_number, self.data, callback)
+        Queue::new(self, callback)
     }
 
     /// Create the `Queue` with the provided decider
@@ -162,6 +202,6 @@ impl<A> QueueBuilder<A> {
     /// It is an abstraction suitable for most use cases.
     pub fn decider_and_finalize<F: PacketHandler<A> + VerdictHandler<A>>(self, decider: F)
             -> Result<Box<Queue<A, F>>, Error> {
-        Queue::new(self.ptr, self.queue_number, self.data, decider)
+        Queue::new(self, decider)
     }
 }
