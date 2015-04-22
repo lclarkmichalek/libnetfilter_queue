@@ -15,10 +15,10 @@ mod error;
 mod util;
 mod lock;
 
-pub mod verdict;
-pub mod message;
-pub mod queue;
 pub mod handle;
+pub mod queue;
+pub mod message;
+pub mod verdict;
 
 #[cfg(test)]
 mod test;

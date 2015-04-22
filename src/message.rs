@@ -70,7 +70,7 @@ impl Payload for IPHeader {}
 pub struct Message<'a> {
     pub raw: *mut nfgenmsg,
     pub ptr: *mut nfq_data,
-    pub header: Result<&'a Header, Error>
+    pub header: &'a Header
 }
 
 impl<'a> Drop for Message<'a> {
@@ -78,20 +78,19 @@ impl<'a> Drop for Message<'a> {
 }
 
 impl<'a> Message<'a> {
-    pub fn new(raw: *mut nfgenmsg, ptr: *mut nfq_data) -> Message<'a> {
+    pub fn new(raw: *mut nfgenmsg, ptr: *mut nfq_data) -> Result<Message<'a>, Error> {
         let header = unsafe {
             let ptr = nfq_get_msg_packet_hdr(ptr);
-            if ptr.is_null() {
-                Err(error(Reason::GetHeader, "Failed to get header", None))
-            } else {
-                Ok(as_ref(&ptr).unwrap())
+            match as_ref(&ptr) {
+                Some(h) => h,
+                None => return Err(error(Reason::GetHeader, "Failed to get header", None))
             }
         };
-        Message {
+        Ok(Message {
             raw: raw,
             ptr: ptr,
             header: header
-        }
+        })
     }
 
     pub unsafe fn ip_header(&self) -> Result<&IPHeader, Error> {

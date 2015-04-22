@@ -40,7 +40,7 @@ extern fn queue_callback<A, F: PacketHandler<A>>(qh: *mut nfq_q_handle,
     let queue: &mut Queue<A, F> = unsafe { as_mut(&queue_ptr).unwrap() };
     let message = Message::new(nfmsg, nfad);
 
-    queue.callback.handle(qh, &message, &mut queue.data) as c_int
+    queue.callback.handle(qh, message.as_ref(), &mut queue.data) as c_int
 }
 
 /// A handle to an NFQueue queue
@@ -92,7 +92,7 @@ impl<A, F: PacketHandler<A>> Queue<A, F> {
     }
 
     /// Set the copy-mode for this queue
-    pub fn mode(&mut self, mode: CopyMode) -> Result<(), Error> {
+    pub fn set_mode(&mut self, mode: CopyMode) -> Result<(), Error> {
         let copy_mode = match mode {
             CopyMode::None => NFQCopyMode::NONE,
             CopyMode::Metadata => NFQCopyMode::META,
@@ -114,7 +114,7 @@ impl<A, F: PacketHandler<A>> Queue<A, F> {
     /// Set the max-length for this queue
     ///
     /// Once `length` packets are enqueued, packets will be dropped until enqueued packets are processed.
-    pub fn maxlen(&mut self, length: u32) -> Result<(), Error> {
+    pub fn set_max_length(&mut self, length: u32) -> Result<(), Error> {
         let res = unsafe { nfq_set_queue_maxlen(self.ptr, length) };
         if res != 0 {
             Err(error(Reason::SetQueueMaxlen, "Failed to set queue maxlen", Some(res)))

@@ -2,7 +2,7 @@ use error::*;
 use libc::*;
 use std::ptr::null;
 
-pub use ffi::*;
+use ffi::*;
 pub use ffi::nfq_q_handle as QueueHandle;
 use message::Message;
 
@@ -34,7 +34,7 @@ impl Verdict {
 }
 
 pub trait PacketHandler<A> {
-    fn handle(&self, hq: *mut QueueHandle, message: &Message, data: &mut A) -> i32;
+    fn handle(&self, hq: *mut QueueHandle, message: Result<&Message, &Error>, data: &mut A) -> i32;
 }
 
 pub trait VerdictHandler<A> {
@@ -43,13 +43,15 @@ pub trait VerdictHandler<A> {
 
 #[allow(non_snake_case)]
 impl<A, V> PacketHandler<A> for V where V: VerdictHandler<A> {
-    fn handle(&self, hq: *mut QueueHandle, message: &Message, data: &mut A) -> i32 {
+    fn handle(&self, hq: *mut QueueHandle, message: Result<&Message, &Error>, data: &mut A) -> i32 {
         let NULL: *const c_uchar = null();
-        let verdict = self.decide(message, data);
-        match message.header {
-            Ok(header) => { let _ = Verdict::set_verdict(hq, header.id(), verdict, 0, NULL); },
-            Err(_) => (),
-        };
+        match message {
+            Ok(m) => {
+                let verdict = self.decide(m, data);
+                let _ = Verdict::set_verdict(hq, m.header.id(), verdict, 0, NULL);
+            },
+            Err(_) => ()
+        }
         0
     }
 }
