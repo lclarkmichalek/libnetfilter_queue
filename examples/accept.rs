@@ -1,5 +1,5 @@
 extern crate libc;
-extern crate libnetfilter_queue as nfq;
+extern crate netfilter_queue as nfq;
 
 use nfq::verdict::{Verdict, VerdictHandler};
 use nfq::message::Message;
@@ -14,12 +14,12 @@ fn main() {
         .ok().unwrap();
 
     let _ = handle.bind(ProtocolFamily::INET);
-    let _ = queue.mode(CopyMode::Packet(4096)).ok();
+    let _ = queue.set_mode(CopyMode::Packet(4096)).ok();
 
-    println!("Listen for packets...");
+    println!("Listening for packets...");
     handle.start(4096);
 
-    println!("Finished...");
+    println!("...finished.");
 }
 
 struct Void;
@@ -27,11 +27,7 @@ struct Decider;
 
 impl VerdictHandler<Void> for Decider {
     fn decide(&self, message: &Message, _: &mut Void) -> Verdict {
-        match message.header {
-            Ok(header) => println!("Handling packet (ID: {})", header.id()),
-            Err(_) => ()
-        };
-
+        println!("Handling packet (ID: {})", message.header.id());
         Verdict::Accept
     }
 }

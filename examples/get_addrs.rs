@@ -1,5 +1,5 @@
 extern crate libc;
-extern crate libnetfilter_queue as nfq;
+extern crate netfilter_queue as nfq;
 
 use nfq::verdict::{Verdict, VerdictHandler};
 use nfq::message::{Message, IPHEADER_SIZE};
@@ -14,12 +14,12 @@ fn main() {
         .ok().unwrap();
 
     let _ = handle.bind(ProtocolFamily::INET);
-    let _ = queue.mode(CopyMode::Packet(IPHEADER_SIZE)).ok();
+    let _ = queue.set_mode(CopyMode::Packet(IPHEADER_SIZE)).ok();
 
-    println!("Listen for packets...");
-    handle.start(IPHEADER_SIZE as u64);
+    println!("Listening for packets...");
+    handle.start(IPHEADER_SIZE);
 
-    println!("Finished...");
+    println!("...finished.");
 }
 
 struct Void;
@@ -27,12 +27,7 @@ struct Decider;
 
 impl VerdictHandler<Void> for Decider {
     fn decide(&self, message: &Message, _: &mut Void) -> Verdict {
-        match message.header {
-            Ok(packet_header) => println!("Handling packet (ID: {})", packet_header.id()),
-            Err(_) => ()
-        };
-
-        match unsafe { message.ip_header() } {
+        match unsafe { message.ip_header() } { // Note that the handle was started with IPHEADER_SIZE
             Ok(ip_header) => println!("saddr: {}, daddr: {}", ip_header.saddr(), ip_header.daddr()),
             Err(_) => ()
         };
