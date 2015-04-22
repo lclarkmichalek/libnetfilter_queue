@@ -13,11 +13,15 @@ use util::*;
 use ffi::*;
 pub use ffi::nfqnl_msg_packet_hdr as Header;
 
+/// Structs impl'ing `Payload` must be sized correctly for the payload data that mill be transmuted to it
 pub trait Payload {}
 
+/// The size of packets to fetch for the `IPHeader` `Payload`
 pub const IPHEADER_SIZE: u16 = 160;
 
 #[allow(dead_code)]
+#[allow(missing_docs)]
+/// A `Payload` to fetch and parse an IP packet header
 pub struct IPHeader {
     pub version_and_header_raw: u8,
     pub dscp_raw: u8,
@@ -32,25 +36,12 @@ pub struct IPHeader {
 }
 
 impl IPHeader {
-    pub fn new() -> IPHeader {
-        IPHeader {
-            version_and_header_raw: 0,
-            dscp_raw: 0,
-            total_length_raw: 0,
-            id_raw: 0,
-            flags_and_offset_raw: 0,
-            ttl_raw: 0,
-            protocol_raw: 0,
-            checksum_raw: 0,
-            saddr_raw: 0,
-            daddr_raw: 0,
-        }
-    }
-
+    /// Parse the source address
     pub fn saddr(&self) -> Ipv4Addr {
         addr_to_ipv4(&self.saddr_raw)
     }
 
+    /// Parse the destination address
     pub fn daddr(&self) -> Ipv4Addr {
         addr_to_ipv4(&self.daddr_raw)
     }
@@ -67,9 +58,13 @@ fn addr_to_ipv4(src: &u32) -> Ipv4Addr {
 
 impl Payload for IPHeader {}
 
+/// The packet message
 pub struct Message<'a> {
+    /// A raw pointer to the queue data
     pub raw: *mut nfgenmsg,
+    /// A raw pointer to the packet data
     pub ptr: *mut nfq_data,
+    /// The `Message` header
     pub header: &'a Header
 }
 
@@ -78,6 +73,7 @@ impl<'a> Drop for Message<'a> {
 }
 
 impl<'a> Message<'a> {
+    #[doc(hidden)]
     pub fn new(raw: *mut nfgenmsg, ptr: *mut nfq_data) -> Result<Message<'a>, Error> {
         let header = unsafe {
             let ptr = nfq_get_msg_packet_hdr(ptr);
@@ -93,10 +89,16 @@ impl<'a> Message<'a> {
         })
     }
 
+    /// Parse the `IPHeader` from the message
+    ///
+    /// This fn should only be called if `handle.start` was called with `IPHEADER_SIZE`.
     pub unsafe fn ip_header(&self) -> Result<&IPHeader, Error> {
         self.payload::<IPHeader>()
     }
 
+    /// Parse a sized `Payload` from the message
+    ///
+    /// The size of the `Payload` must be equal to the value that `handle.start` was called with.
     pub unsafe fn payload<A: Payload>(&self) -> Result<&A, Error> {
         let data: *const A = null();
         let ptr: *mut *mut A = &mut (data as *mut A);

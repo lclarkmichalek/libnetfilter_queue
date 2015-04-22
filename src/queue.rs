@@ -132,7 +132,7 @@ pub struct QueueBuilder<A> {
 }
 
 impl<A> QueueBuilder<A> {
-    #[doc(hide)]
+    #[doc(hidden)]
     pub fn new(ptr: *mut nfq_handle, data: A) -> QueueBuilder<A> {
         QueueBuilder {
             ptr: ptr,
