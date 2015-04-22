@@ -9,7 +9,7 @@ use nfq::handle::{Handle, ProtocolFamily};
 fn main() {
     let void = Void;
     let mut handle = Handle::new().ok().unwrap();
-    let mut queue = handle.queue_builder::<Void>(void)
+    let mut queue = handle.queue_builder(void)
         .decider_and_finalize(Decider)
         .ok().unwrap();
 

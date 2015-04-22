@@ -142,9 +142,12 @@ impl<A> QueueBuilder<A> {
     }
 
     /// Set the queue from which the `Queue` will take packets
-    pub fn queue_number(&mut self, queue_number: u16) -> &mut QueueBuilder<A> {
-        self.queue_number = queue_number;
-        self
+    pub fn queue_number(self, queue_number: u16) -> QueueBuilder<A> {
+        QueueBuilder {
+            ptr: self.ptr,
+            queue_number: queue_number,
+            data: self.data
+        }
     }
 
     /// Create the `Queue` with the provided callback
@@ -162,4 +165,3 @@ impl<A> QueueBuilder<A> {
         Queue::new(self.ptr, self.queue_number, self.data, decider)
     }
 }
-

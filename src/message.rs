@@ -19,16 +19,16 @@ pub const IPHEADER_SIZE: u16 = 160;
 
 #[allow(dead_code)]
 pub struct IPHeader {
-    version_and_header_raw: u8,
-    dscp_raw: u8,
-    total_length_raw: u16,
-    id_raw: u16,
-    flags_and_offset_raw: u16,
-    ttl_raw: u8,
-    protocol_raw: u8,
-    checksum_raw: u16,
-    saddr_raw: u32,
-    daddr_raw: u32
+    pub version_and_header_raw: u8,
+    pub dscp_raw: u8,
+    pub total_length_raw: u16,
+    pub id_raw: u16,
+    pub flags_and_offset_raw: u16,
+    pub ttl_raw: u8,
+    pub protocol_raw: u8,
+    pub checksum_raw: u16,
+    pub saddr_raw: u32,
+    pub daddr_raw: u32
 }
 
 impl IPHeader {
