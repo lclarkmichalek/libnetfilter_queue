@@ -1,10 +1,17 @@
 [package]
-name = "libnetfilter_queue"
-version = "0.0.2"
+name = "netfilter_queue"
+version = "0.1.0"
 authors = [
     "Laurie Clark-Michalek <lclarkmichalek@gmail.com>",
     "Zach Pomerantz <zach@terminal.com>"
 ]
+license-file = "LICENSE"
+description = "Binding for libnetfilter_queue, a Linux library that allows userspace to make decisions on the destiny of packets"
+homepage      = "https://github.com/terminalcloud/libnetfilter_queue"
+repository    = "https://github.com/terminalcloud/libnetfilter_queue"
+readme        = "README.md"
+keywords      = ["iptables", "nf", "nfq", "netfilter", "netfilter_queue"]
+exclude       = [ ".gitignore" ]
 
 [dependencies]
 lazy_static = "0.1.*"
