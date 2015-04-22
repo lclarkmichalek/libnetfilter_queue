@@ -2,7 +2,7 @@
 //!
 //! These bindings allow you to have access to the `QUEUE` and `NFQUEUE`, set in `iptables`,
 //! and write your own userspace programs to process these queues.
-#![deny(missing_docs)]
+// #![deny(missing_docs)]
 
 extern crate libc;
 extern crate num;
