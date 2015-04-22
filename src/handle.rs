@@ -112,4 +112,14 @@ impl Handle {
             free(buffer as *mut c_void);
         }
     }
+
+    /// Start listening using any attached queues
+    ///
+    /// This will only listen on queues attached with `queue_builder`.
+    /// This fn behaves like `start` except that `length` is determined by the size_of the type, `P`.
+    /// For example, to parse `IPHeader`, use `start_sized_to_payload<IPHeader>()`.
+    pub fn start_sized_to_payload<P>(&mut self) {
+        let size = mem::size_of::<P>();
+        self.start(size as u16)
+    }
 }

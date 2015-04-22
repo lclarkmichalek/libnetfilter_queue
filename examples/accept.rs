@@ -9,12 +9,12 @@ use nfq::handle::{Handle, ProtocolFamily};
 fn main() {
     let void = Void;
     let mut handle = Handle::new().ok().unwrap();
-    let mut queue = handle.queue_builder(void)
+    let _ = handle.queue_builder(void)
+        .copy_mode(CopyMode::None)
         .decider_and_finalize(Decider)
         .ok().unwrap();
 
     let _ = handle.bind(ProtocolFamily::INET);
-    let _ = queue.set_mode(CopyMode::Packet(4096)).ok();
 
     println!("Listening for packets...");
     handle.start(4096);

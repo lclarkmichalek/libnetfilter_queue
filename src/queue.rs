@@ -177,6 +177,22 @@ impl<A> QueueBuilder<A> {
         }
     }
 
+    /// Set the copy-mode for the `Queue`
+    ///
+    /// Note that this can be changed later through the `Queue`'s methods
+    /// This fn behaves like `copy_mode` except that `CopyMode` is set to `Packet(length`,
+    /// where `length` is determined by the size_of the type, `P`.
+    pub fn copy_mode_sized_to_payload<P>(self) -> QueueBuilder<A> {
+        let size = mem::size_of::<P>();
+        QueueBuilder {
+            ptr: self.ptr,
+            queue_number: self.queue_number,
+            copy_mode: Some(CopyMode::Packet(size as u16)),
+            max_length: self.max_length,
+            data: self.data
+        }
+    }
+
     /// Set the max-length for the `Queue`
     ///
     /// Note that this can be changed later through the `Queue`'s methods

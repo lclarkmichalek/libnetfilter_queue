@@ -16,9 +16,6 @@ pub use ffi::nfqnl_msg_packet_hdr as Header;
 /// Structs impl'ing `Payload` must be sized correctly for the payload data that mill be transmuted to it
 pub trait Payload {}
 
-/// The size of packets to fetch for the `IPHeader` `Payload`
-pub const IPHEADER_SIZE: u16 = 160;
-
 #[allow(dead_code)]
 #[allow(missing_docs)]
 /// A `Payload` to fetch and parse an IP packet header
@@ -91,7 +88,10 @@ impl<'a> Message<'a> {
 
     /// Parse the `IPHeader` from the message
     ///
-    /// This fn should only be called if `handle.start` was called with `IPHEADER_SIZE`.
+    /// When parsing `IPHeader` from a message, the `Queue`'s `CopyMode` and the `Handle` should be sized to the `IPHeader`.
+    /// The best way to do this is with the `queue_builder.set_copy_mode_sized_to_payload`
+    /// and `handle.start_sized_to_payload` methods.
+    /// See `examples/get_addrs.rs`.
     pub unsafe fn ip_header(&self) -> Result<&IPHeader, Error> {
         self.payload::<IPHeader>()
     }
@@ -99,6 +99,9 @@ impl<'a> Message<'a> {
     /// Parse a sized `Payload` from the message
     ///
     /// The size of the `Payload` must be equal to the value that `handle.start` was called with.
+    /// The best way to do this is with the `queue_builder.set_copy_mode_sized_to_payload`
+    /// and `handle.start_sized_to_payload` methods.
+    /// See `examples/get_addrs.rs`.
     pub unsafe fn payload<A: Payload>(&self) -> Result<&A, Error> {
         let data: *const A = null();
         let ptr: *mut *mut A = &mut (data as *mut A);
