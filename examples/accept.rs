@@ -12,9 +12,7 @@ use nfq::message::verdict::Verdict;
 
 fn main() {
     let mut handle = Handle::new().ok().unwrap();
-    let mut queue = handle.queue_builder()
-        .decider_and_finalize(Decider)
-        .ok().unwrap();
+    let mut queue = handle.queue(0, Decider).unwrap();
 
     handle.bind(ProtocolFamily::INET);
     queue.mode(CopyMode::Packet(4096)).ok();

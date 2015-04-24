@@ -71,7 +71,7 @@ impl<F: PacketHandler> Drop for Queue<F> {
 }
 
 impl<F: PacketHandler> Queue<F> {
-    fn new(handle: *mut nfq_handle,
+    pub fn new(handle: *mut nfq_handle,
            queue_number: u16,
            packet_handler: F) -> Result<Box<Queue<F>>, NFQError> {
         let _lock = LOCK.lock().unwrap();
@@ -124,34 +124,5 @@ impl<F: PacketHandler> Queue<F> {
         } else {
             Ok(())
         }
-    }
-}
-
-pub struct QueueBuilder {
-    ptr: *mut nfq_handle,
-    queue_number: uint16_t,
-}
-
-impl QueueBuilder {
-    pub fn new(ptr: *mut nfq_handle) -> QueueBuilder {
-        QueueBuilder {
-            ptr: ptr,
-            queue_number: 0
-        }
-    }
-
-    pub fn queue_number(&mut self, queue_number: u16) -> &QueueBuilder {
-        self.queue_number = queue_number;
-        self
-    }
-
-    pub fn callback_and_finalize<F: PacketHandler>(mut self, callback: F)
-            -> Result<Box<Queue<F>>, NFQError> {
-        Queue::new(self.ptr, self.queue_number, callback)
-    }
-
-    pub fn decider_and_finalize<F: PacketHandler + VerdictHandler>(mut self, decider: F)
-            -> Result<Box<Queue<F>>, NFQError> {
-        Queue::new(self.ptr, self.queue_number, decider)
     }
 }

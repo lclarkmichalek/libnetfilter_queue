@@ -7,7 +7,7 @@ use std::mem;
 use std::ptr::null;
 
 use error::*;
-use queue::QueueBuilder;
+use queue::{Queue, PacketHandler};
 use message::Message;
 use lock::NFQ_LOCK as LOCK;
 
@@ -78,8 +78,10 @@ impl Handle {
         }
     }
 
-    pub fn queue_builder(&mut self) -> QueueBuilder {
-        QueueBuilder::new(self.ptr)
+    pub fn queue<F: PacketHandler>(&mut self,
+                                   queue_number: u16,
+                                   handler: F) -> Result<Box<Queue<F>>, NFQError> {
+        Queue::new(self.ptr, queue_number, handler)
     }
 
     pub fn start(&mut self, length: u64) {
