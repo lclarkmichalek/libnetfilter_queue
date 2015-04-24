@@ -3,12 +3,12 @@ use error::*;
 
 #[test]
 fn create_handle() {
-    let _h = NFQHandle::new().unwrap();
+    let _h = Handle::new().unwrap();
 }
 
 #[test]
 fn bind_unbind() {
-    let mut h = NFQHandle::new().unwrap();
-    h.bind(ProtoFamily::INET).unwrap();
-    h.unbind(ProtoFamily::INET).unwrap();
+    let mut h = Handle::new().unwrap();
+    h.bind(ProtocolFamily::INET).unwrap();
+    h.unbind(ProtocolFamily::INET).unwrap();
 }
