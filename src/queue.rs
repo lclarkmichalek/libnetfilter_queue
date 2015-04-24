@@ -27,42 +27,41 @@ pub enum CopyMode {
     Packet(u16)
 }
 
-pub trait PacketHandler<A> {
-    fn handle(&self, hq: *mut nfq_q_handle, message: &mut Message, data: &mut A) -> i32;
+pub trait PacketHandler {
+    fn handle(&mut self, hq: *mut nfq_q_handle, message: &mut Message) -> i32;
 }
 
-pub trait VerdictHandler<A> {
-    fn decide(&self, message: &mut Message, data: &mut A) -> Verdict;
+pub trait VerdictHandler {
+    fn decide(&mut self, message: &mut Message) -> Verdict;
 }
 
-impl<A, V> PacketHandler<A> for V where V: VerdictHandler<A> {
-    fn handle(&self, hq: *mut nfq_q_handle, message: &mut Message, data: &mut A) -> i32 {
+impl<V> PacketHandler for V where V: VerdictHandler {
+    fn handle(&mut self, hq: *mut nfq_q_handle, message: &mut Message) -> i32 {
         let NULL: *const c_uchar = null();
-        let verdict = self.decide(message, data);
+        let verdict = self.decide(message);
         Verdict::set_verdict(hq, message.header.id(), verdict, 0, NULL);
         0
     }
 }
 
-extern fn queue_callback<A, F: PacketHandler<A>>(qh: *mut nfq_q_handle,
+extern fn queue_callback<F: PacketHandler>(qh: *mut nfq_q_handle,
                                nfmsg: *mut nfgenmsg,
                                nfad: *mut nfq_data,
                                cdata: *mut c_void) -> c_int {
 
-    let queue_ptr: *mut Queue<A, F> = unsafe { mem::transmute(cdata) };
-    let queue: &mut Queue<A, F> = unsafe { as_mut(&queue_ptr).unwrap() };
+    let queue_ptr: *mut Queue<F> = unsafe { mem::transmute(cdata) };
+    let queue: &mut Queue<F> = unsafe { as_mut(&queue_ptr).unwrap() };
     let mut message = Message::new(nfmsg, nfad);
 
-    queue.callback.handle(qh, &mut message, &mut queue.data) as c_int
+    queue.callback.handle(qh, &mut message) as c_int
 }
 
-pub struct Queue<A, F: PacketHandler<A>> {
+pub struct Queue<F: PacketHandler> {
     ptr: *mut nfq_q_handle,
-    data: A,
     callback: F
 }
 
-impl<A, F: PacketHandler<A>> Drop for Queue<A, F> {
+impl<F: PacketHandler> Drop for Queue<F> {
     fn drop(&mut self) {
         let ret = unsafe { nfq_destroy_queue(self.ptr) };
         if ret != 0 {
@@ -71,25 +70,23 @@ impl<A, F: PacketHandler<A>> Drop for Queue<A, F> {
     }
 }
 
-impl<A, F: PacketHandler<A>> Queue<A, F> {
+impl<F: PacketHandler> Queue<F> {
     fn new(handle: *mut nfq_handle,
            queue_number: u16,
-           mut data: A,
-           packet_handler: F) -> Result<Box<Queue<A, F>>, NFQError> {
+           packet_handler: F) -> Result<Box<Queue<F>>, NFQError> {
         let _lock = LOCK.lock().unwrap();
 
         let nfq_ptr: *const nfq_q_handle = null();
-        let mut queue: Box<Queue<A, F>> = Box::new(Queue {
+        let mut queue: Box<Queue<F>> = Box::new(Queue {
             ptr: nfq_ptr as *mut nfq_q_handle, // set after nfq_create_queue
-            data: data,
             callback: packet_handler,
         });
-        let queue_ptr: *mut Queue<A, F> = &mut *queue;
+        let queue_ptr: *mut Queue<F> = &mut *queue;
 
         let ptr = unsafe {
             nfq_create_queue(handle,
                              queue_number,
-                             queue_callback::<A, F>,
+                             queue_callback::<F>,
                              mem::transmute(queue_ptr))
         };
 
@@ -130,34 +127,31 @@ impl<A, F: PacketHandler<A>> Queue<A, F> {
     }
 }
 
-pub struct QueueBuilder<A> {
+pub struct QueueBuilder {
     ptr: *mut nfq_handle,
     queue_number: uint16_t,
-    data: A
 }
 
-impl<A> QueueBuilder<A> {
-    pub fn new(ptr: *mut nfq_handle, data: A) -> QueueBuilder<A> {
+impl QueueBuilder {
+    pub fn new(ptr: *mut nfq_handle) -> QueueBuilder {
         QueueBuilder {
             ptr: ptr,
-            queue_number: 0,
-            data: data
+            queue_number: 0
         }
     }
 
-    pub fn queue_number(&mut self, queue_number: u16) -> &mut QueueBuilder<A> {
+    pub fn queue_number(&mut self, queue_number: u16) -> &QueueBuilder {
         self.queue_number = queue_number;
         self
     }
 
-    pub fn callback_and_finalize<F: PacketHandler<A>>(mut self, callback: F)
-            -> Result<Box<Queue<A, F>>, NFQError> {
-        Queue::new(self.ptr, self.queue_number, self.data, callback)
+    pub fn callback_and_finalize<F: PacketHandler>(mut self, callback: F)
+            -> Result<Box<Queue<F>>, NFQError> {
+        Queue::new(self.ptr, self.queue_number, callback)
     }
 
-    pub fn decider_and_finalize<F: PacketHandler<A> + VerdictHandler<A>>(mut self, decider: F)
-            -> Result<Box<Queue<A, F>>, NFQError> {
-        Queue::new(self.ptr, self.queue_number, self.data, decider)
+    pub fn decider_and_finalize<F: PacketHandler + VerdictHandler>(mut self, decider: F)
+            -> Result<Box<Queue<F>>, NFQError> {
+        Queue::new(self.ptr, self.queue_number, decider)
     }
 }
-

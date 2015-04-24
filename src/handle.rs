@@ -78,8 +78,8 @@ impl Handle {
         }
     }
 
-    pub fn queue_builder<A>(&mut self, mut data: A) -> QueueBuilder<A> {
-        QueueBuilder::new(self.ptr, data)
+    pub fn queue_builder(&mut self) -> QueueBuilder {
+        QueueBuilder::new(self.ptr)
     }
 
     pub fn start(&mut self, length: u64) {

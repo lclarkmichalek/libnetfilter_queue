@@ -11,9 +11,8 @@ use nfq::message::Message;
 use nfq::message::verdict::Verdict;
 
 fn main() {
-    let mut void = Void;
     let mut handle = Handle::new().ok().unwrap();
-    let mut queue = handle.queue_builder::<Void>(void)
+    let mut queue = handle.queue_builder()
         .decider_and_finalize(Decider)
         .ok().unwrap();
 
@@ -26,11 +25,10 @@ fn main() {
     println!("Finished...");
 }
 
-struct Void;
 struct Decider;
 
-impl VerdictHandler<Void> for Decider {
-    fn decide(&self, message: &mut Message, data: &mut Void) -> Verdict {
+impl VerdictHandler for Decider {
+    fn decide(&mut self, message: &mut Message) -> Verdict {
         let id = message.header.id();
         println!("Handline packet (ID: {})", id);
 
