@@ -1,6 +1,6 @@
 [package]
 name = "libnetfilter_queue"
-version = "0.0.2"
+version = "0.1.0"
 authors = [
     "Laurie Clark-Michalek <lclarkmichalek@gmail.com>",
     "Zach Pomerantz <zach@terminal.com>"
