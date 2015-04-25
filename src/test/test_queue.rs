@@ -1,7 +1,7 @@
 use handle::*;
 use queue::*;
 use message::*;
-use message::verdict::*;
+use verdict::*;
 use error::*;
 
 struct CallbackCtx {

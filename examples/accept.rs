@@ -8,7 +8,7 @@ use nfq::nfq_q_handle;
 use nfq::handle::{Handle, ProtocolFamily};
 use nfq::queue::{CopyMode, VerdictHandler};
 use nfq::message::Message;
-use nfq::message::verdict::Verdict;
+use nfq::verdict::Verdict;
 
 fn main() {
     let mut handle = Handle::new().ok().unwrap();

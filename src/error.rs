@@ -12,6 +12,7 @@ pub enum ErrorReason {
     CreateQueue,
     SetQueueMode,
     SetQueueMaxlen,
+    SetVerdict,
     Unknown
 }
 

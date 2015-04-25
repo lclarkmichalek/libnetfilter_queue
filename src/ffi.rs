@@ -3,13 +3,12 @@
 use std::num::Int;
 use libc::*;
 
-#[link(name="linux/netfilter")]
-pub const NF_DROP: c_int = 0;
-pub const NF_ACCEPT: c_int = 1;
-pub const NF_STOLEN: c_int = 2;
-pub const NF_QUEUE: c_int = 3;
-pub const NF_REPEAT: c_int = 4;
-pub const NF_STOP: c_int = 5;
+pub const NF_DROP: u32 = 0;
+pub const NF_ACCEPT: u32 = 1;
+pub const NF_STOLEN: u32 = 2;
+pub const NF_QUEUE: u32 = 3;
+pub const NF_REPEAT: u32 = 4;
+pub const NF_STOP: u32 = 5;
 
 #[repr(C)]
 pub struct nfq_handle;

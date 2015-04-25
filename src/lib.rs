@@ -17,6 +17,7 @@ mod lock;
 pub mod message;
 pub mod queue;
 pub mod handle;
+pub mod verdict;
 
 #[cfg(test)]
 mod test;

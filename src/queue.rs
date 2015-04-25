@@ -10,7 +10,7 @@ use std::ptr::null;
 use error::*;
 use util::*;
 use message::Message;
-use message::verdict::Verdict;
+use verdict::Verdict;
 use lock::NFQ_LOCK as LOCK;
 
 use ffi::*;
