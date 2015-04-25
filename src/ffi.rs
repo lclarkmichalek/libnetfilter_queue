@@ -1,6 +1,5 @@
 #![allow(non_camel_case_types)]
 
-use std::num::Int;
 use libc::*;
 
 pub const NF_DROP: u32 = 0;
@@ -31,7 +30,7 @@ pub struct nfqnl_msg_packet_hdr {
 }
 
 impl nfqnl_msg_packet_hdr {
-    pub fn id(&self) -> u32 { Int::from_be(self.packet_id) }
+    pub fn id(&self) -> u32 { u32::from_be(self.packet_id) }
 }
 
 #[link(name="netfilter_queue")]
