@@ -19,7 +19,7 @@ struct Decider;
 
 impl VerdictHandler for Decider {
     fn decide(&mut self, message: &mut Message) -> Verdict {
-        let id = message.header.id();
+        let id = message.header().id();
         println!("Handling packet (ID: {})", id);
 
         Verdict::Accept

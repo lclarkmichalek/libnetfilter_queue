@@ -39,7 +39,7 @@ impl<V> PacketHandler for V where V: VerdictHandler {
     fn handle(&mut self, hq: *mut nfq_q_handle, message: &mut Message) -> i32 {
         let NULL: *const c_uchar = null();
         let verdict = self.decide(message);
-        Verdict::set_verdict(hq, message.header.id(), verdict, 0, NULL);
+        Verdict::set_verdict(hq, message.header().id(), verdict, 0, NULL);
         0
     }
 }
