@@ -23,3 +23,7 @@ pub mod verdict;
 mod test;
 
 pub use ffi::nfq_q_handle;
+pub use handle::{Handle, ProtocolFamily};
+pub use queue::{Queue, CopyMode, PacketHandler, VerdictHandler};
+pub use message::Message;
+pub use verdict::Verdict;
