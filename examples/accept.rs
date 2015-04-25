@@ -1,14 +1,6 @@
-extern crate libc;
 extern crate libnfqueue as nfq;
 
-use libc::*;
-use std::ptr::null;
-use std::mem;
-use nfq::nfq_q_handle;
-use nfq::handle::{Handle, ProtocolFamily};
-use nfq::queue::{CopyMode, VerdictHandler};
-use nfq::message::Message;
-use nfq::verdict::Verdict;
+use nfq::{Handle, ProtocolFamily, CopyMode, VerdictHandler, Message, Verdict};
 
 fn main() {
     let mut handle = Handle::new().ok().unwrap();
