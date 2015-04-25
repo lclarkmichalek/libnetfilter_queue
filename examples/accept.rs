@@ -1,5 +1,5 @@
 extern crate libc;
-extern crate libnetfilter_queue as nfq;
+extern crate libnfqueue as nfq;
 
 use libc::*;
 use std::ptr::null;
