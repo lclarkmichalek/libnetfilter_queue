@@ -4,11 +4,9 @@
 
 use libc::*;
 use std::mem;
-use std::ptr::null;
 
 use error::*;
 use queue::{Queue, PacketHandler};
-use message::Message;
 use lock::NFQ_LOCK as LOCK;
 
 use ffi::*;
