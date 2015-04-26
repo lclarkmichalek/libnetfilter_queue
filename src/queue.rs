@@ -44,6 +44,12 @@ impl<V> PacketHandler for V where V: VerdictHandler {
     }
 }
 
+impl<F> VerdictHandler for F where F: FnMut(&mut Message) -> Verdict {
+    fn decide(&mut self, message: &mut Message) -> Verdict {
+        self(message)
+    }
+}
+
 extern fn queue_callback<F: PacketHandler>(qh: *mut nfq_q_handle,
                                nfmsg: *mut nfgenmsg,
                                nfad: *mut nfq_data,
