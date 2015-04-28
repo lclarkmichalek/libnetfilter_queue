@@ -10,7 +10,7 @@ use std::ptr::null;
 
 use error::*;
 use util::*;
-use message::Message;
+use message::{Message, Payload};
 pub use self::verdict::Verdict;
 use lock::NFQ_LOCK as LOCK;
 
@@ -109,6 +109,15 @@ impl<F: PacketHandler> Queue<F> {
         } else {
             Ok(())
         }
+    }
+
+    /// Set the copy-mode to Packet for the size of the given struct
+    ///
+    /// This fn behaves like `set_mode` except that packet size is determined by the size of the type, `P`.
+    /// For example, to copy enough to parse `IPHeader`, use `set_mode_sized::<IPHeader>()`.
+    pub fn set_mode_sized<P: Payload>(&mut self) -> Result<(), Error> {
+        let bytes = mem::size_of::<P>() as u16;
+        self.set_mode(CopyMode::Packet(bytes * 8))
     }
 
     /// Set the max-length for this queue

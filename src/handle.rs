@@ -6,6 +6,7 @@ use libc::*;
 use std::mem;
 use error::*;
 use queue::{Queue, PacketHandler};
+use message::Payload;
 use lock::NFQ_LOCK as LOCK;
 
 use ffi::*;
@@ -110,9 +111,9 @@ impl Handle {
     ///
     /// This will only listen on queues attached with `queue_builder`.
     /// This fn behaves like `start` except that `length` is determined by the size_of the type, `P`.
-    /// For example, to parse `IPHeader`, use `start_sized_to_payload<IPHeader>()`.
-    pub fn start_sized_to_payload<P>(&mut self) {
-        let size = mem::size_of::<P>();
-        self.start(size as u16)
+    /// For example, to parse `IPHeader`, use `start_sized<IPHeader>()`.
+    pub fn start_sized<P: Payload>(&mut self) {
+        let bytes = mem::size_of::<P>() as u16;
+        self.start(bytes * 8)
     }
 }

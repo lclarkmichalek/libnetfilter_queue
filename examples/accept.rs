@@ -9,7 +9,7 @@ fn main() {
     let _ = handle.bind(ProtocolFamily::INET).ok().unwrap();
 
     let mut queue = handle.queue(0, move |message: &Message| {
-      println!("Handling packet: {}", message.header.id());
+      println!("Handling packet (ID: {})", message.header.id());
       Verdict::Accept
     }).ok().unwrap();
     queue.set_mode(CopyMode::Metadata).ok().unwrap();
