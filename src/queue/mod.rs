@@ -64,7 +64,7 @@ impl<F: PacketHandler> Drop for Queue<F> {
 impl<F: PacketHandler> Queue<F> {
     #[doc(hidden)]
     pub fn new(handle: *mut nfq_handle,
-               queue_number: u16,
+               queue_number: uint16_t,
                packet_handler: F) -> Result<Box<Queue<F>>, Error> {
         let _lock = LOCK.lock().unwrap();
 

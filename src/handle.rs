@@ -43,7 +43,7 @@ impl Handle {
 
         let ptr = unsafe { nfq_open() };
         if ptr.is_null() {
-            Err(error(Reason::OpenHandle, "Failed to allocate andle", None))
+            Err(error(Reason::OpenHandle, "Failed to allocate handle", None))
         } else {
             Ok(Handle{ ptr: ptr })
         }
@@ -79,7 +79,7 @@ impl Handle {
     pub fn queue<F: PacketHandler>(&mut self,
                                    queue_number: u16,
                                    handler: F) -> Result<Box<Queue<F>>, Error> {
-        Queue::new(self.ptr, queue_number, handler)
+        Queue::new(self.ptr, queue_number as uint16_t, handler)
     }
 
     /// Start listening using any attached queues
