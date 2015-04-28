@@ -1,6 +1,7 @@
 #![allow(non_camel_case_types)]
 
 use libc::*;
+use num::traits::PrimInt;
 
 pub const NF_DROP: u32 = 0;
 pub const NF_ACCEPT: u32 = 1;
@@ -13,6 +14,7 @@ pub const NF_STOP: u32 = 5;
 pub struct nfq_handle;
 
 #[repr(C)]
+/// The handle into NFQueue
 pub struct nfq_q_handle;
 
 #[repr(C)]
@@ -23,13 +25,23 @@ pub struct nfq_data;
 
 #[repr(C)]
 #[packed]
+/// The NFQueue specific packet data
 pub struct nfqnl_msg_packet_hdr {
+    /// The packet id
+    ///
+    /// This id is necessary to identify the packet to `set_verdict`.
+    /// However, it may have the wrong endianness, so `id()` should be used instead.
     pub packet_id: uint32_t,
+    /// HW protocol (network order)
     pub hw_protocol: uint16_t,
+    /// Netfilter hook
     pub hook: uint8_t
 }
 
 impl nfqnl_msg_packet_hdr {
+    /// Extract the packet id from the packet in local endianness
+    ///
+    /// This id should be passed to `set_verdict` to set the destiny of the packet.
     pub fn id(&self) -> u32 { u32::from_be(self.packet_id) }
 }
 
@@ -73,4 +85,5 @@ extern {
 
     // Parsing the message
     pub fn nfq_get_msg_packet_hdr(nfad: *mut nfq_data) -> *const nfqnl_msg_packet_hdr;
+    pub fn nfq_get_payload  (nfad: *mut nfq_data, data: *mut *mut c_uchar) -> c_int;
 }
