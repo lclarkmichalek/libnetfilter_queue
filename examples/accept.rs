@@ -1,27 +1,21 @@
 extern crate libnfqueue as nfq;
 
-use nfq::{Handle, ProtocolFamily, CopyMode, VerdictHandler, Message, Verdict};
+use nfq::handle::{Handle, ProtocolFamily};
+use nfq::queue::{CopyMode, Verdict};
+use nfq::message::Message;
 
 fn main() {
     let mut handle = Handle::new().ok().unwrap();
-    let mut queue = handle.queue(0, Decider).unwrap();
+    let _ = handle.bind(ProtocolFamily::INET).ok().unwrap();
 
-    handle.bind(ProtocolFamily::INET);
-    queue.mode(CopyMode::Packet(4096)).ok();
+    let mut queue = handle.queue(0, move |message: &Message| {
+      println!("Handling packet (ID: {})", message.header.id());
+      Verdict::Accept
+    }).ok().unwrap();
+    queue.set_mode(CopyMode::Metadata).ok().unwrap();
 
-    println!("Listen for packets...");
+    println!("Listening for packets...");
     handle.start(4096);
 
-    println!("Finished...");
-}
-
-struct Decider;
-
-impl VerdictHandler for Decider {
-    fn decide(&mut self, message: &mut Message) -> Verdict {
-        let id = message.header().id();
-        println!("Handling packet (ID: {})", id);
-
-        Verdict::Accept
-    }
+    println!("...finished.");
 }
