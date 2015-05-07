@@ -114,6 +114,7 @@ impl Handle {
     /// For example, to parse `IPHeader`, use `start_sized<IPHeader>()`.
     pub fn start_sized<P: Payload>(&mut self) {
         let bytes = mem::size_of::<P>() as u16;
-        self.start(bytes * 8)
+        // netlink header (128 bites) + payload
+        self.start(128 + bytes * 8)
     }
 }
