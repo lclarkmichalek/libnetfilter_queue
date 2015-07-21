@@ -1,7 +1,7 @@
 [package]
 name = "libnfqueue"
 description = "Bindings for the libnetfilter_queue library"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
     "Laurie Clark-Michalek <lclarkmichalek@gmail.com>",
     "Zach Pomerantz <zach@terminal.com>"
